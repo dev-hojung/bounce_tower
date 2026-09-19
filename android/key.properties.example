@@ -1,0 +1,13 @@
+# 릴리스 서명 키 설정. 이 파일을 key.properties로 복사해 실제 값을 채운다.
+# key.properties와 *.jks는 절대 저장소에 커밋하지 말 것(.gitignore 등록됨).
+#
+# 키스토어 생성:
+#   keytool -genkey -v -keystore ~/bounce-tower-upload.jks \
+#     -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+#
+# 생성 후 SHA-1을 Firebase에 추가 등록해야 Google 로그인이 릴리스 빌드에서 동작한다:
+#   keytool -list -v -alias upload -keystore ~/bounce-tower-upload.jks
+storePassword=
+keyPassword=
+keyAlias=upload
+storeFile=/Users/<you>/bounce-tower-upload.jks

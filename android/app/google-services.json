@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "760562010684",
+    "project_id": "bounce-tower",
+    "storage_bucket": "bounce-tower.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:760562010684:android:5120201efc97f2c9655139",
+        "android_client_info": {
+          "package_name": "com.bouncetower.bounce_tower"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "760562010684-62otmraprapj0jhamlf02ajholvkkh9b.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bouncetower.bounce_tower",
+            "certificate_hash": "48c6befd97c3ffba2084638839cfc9954b86bce3"
+          }
+        },
+        {
+          "client_id": "760562010684-m86mf30eqsbosu7mkfn3pl3dutv037if.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1KzYDhn9Y7X_VltsL4xkh6X-nJZx6iR4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "760562010684-m86mf30eqsbosu7mkfn3pl3dutv037if.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "760562010684-mcgfui8p8bqm02a34h93tfi4b1aetfpp.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.bouncetower.bounceTower"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

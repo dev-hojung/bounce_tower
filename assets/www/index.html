@@ -1,0 +1,1919 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>바운스 타워 — Phase 2 프로토타입</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a14; font-family: -apple-system, system-ui, sans-serif; }
+  #app { position: fixed; inset: 0; touch-action: none; }
+  canvas { display: block; }
+
+  /* ===== HUD (게임 중) ===== */
+  #hud { position: fixed; top: calc(10px + var(--safe-top, env(safe-area-inset-top))); left: 0; right: 0; text-align: center; pointer-events: none; z-index: 10; display: none; }
+  #hud.show { display: block; }
+  #lives { position: fixed; top: 14px; left: calc(14px + var(--safe-left, 0px)); z-index: 11;
+           font-size: 22px; height: 28px; letter-spacing: 2px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); }
+  #score { color: #fff; font-size: 44px; font-weight: 800; text-shadow: 0 2px 12px rgba(0,0,0,.6); letter-spacing: -1px; }
+  #combo { color: #ffd84d; font-size: 18px; font-weight: 700; height: 22px; margin-top: 2px; opacity: 0; transition: opacity .15s; }
+  #combo.show { opacity: 1; }
+  #combo.rage { color: #fff; font-size: 27px; height: auto; letter-spacing: 1px;
+                text-shadow: 0 0 12px #ff5c8d, 0 0 26px #ff3b8d; transform-origin: center;
+                animation: ragepulse .5s ease-in-out infinite alternate; }
+  @keyframes ragepulse { from { transform: scale(1); } to { transform: scale(1.14); } }
+  .popup { position: fixed; transform: translate(-50%,-50%); pointer-events: none; z-index: 12;
+           font-weight: 800; font-size: 20px; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,.6);
+           animation: popfade .8s ease-out forwards; white-space: nowrap; }
+  .popup.big { font-size: 27px; color: #ffd84d; }
+  .popup.gold { color: #ffd84d; }
+  @keyframes popfade {
+    0%   { opacity: 0; transform: translate(-50%,-50%) scale(.6); }
+    20%  { opacity: 1; transform: translate(-50%,-95%) scale(1.1); }
+    100% { opacity: 0; transform: translate(-50%,-190%) scale(1); }
+  }
+  #depth { color: #8a8aa0; font-size: 13px; margin-top: 4px; }
+  #hurt { position: fixed; inset: 0; pointer-events: none; z-index: 6; background: radial-gradient(circle at center, transparent 35%, rgba(255,30,40,.6)); opacity: 0; }
+  #hurt.hit { animation: hurtflash .45s ease-out; }
+  @keyframes hurtflash { 0% { opacity: 1; } 100% { opacity: 0; } }
+  #rage { position: fixed; inset: 0; pointer-events: none; z-index: 5;
+          box-shadow: inset 0 0 120px 30px rgba(255,80,140,.0); transition: box-shadow .2s; }
+  #rage.on { box-shadow: inset 0 0 140px 40px rgba(255,80,140,.55); animation: ragevig .7s ease-in-out infinite alternate; }
+  @keyframes ragevig { from { box-shadow: inset 0 0 110px 28px rgba(255,80,140,.42); } to { box-shadow: inset 0 0 165px 58px rgba(255,80,140,.72); } }
+  #hint { position: fixed; bottom: 90px; left: 0; right: 0; text-align: center; color: #fff; font-size: 16px;
+          z-index: 10; pointer-events: none; opacity: .9; animation: pulse 1.4s ease-in-out infinite; display: none; }
+  #hint.show { display: block; }
+  @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:.95} }
+
+  /* ===== 공통 ===== */
+  .btn { pointer-events: auto; cursor: pointer; border: none; border-radius: 40px; font-weight: 700; color: #fff;
+         background: linear-gradient(135deg,#ff5c8d,#ff8f5c); box-shadow: 0 8px 24px rgba(255,92,141,.4);
+         padding: 15px 40px; font-size: 19px; transition: transform .08s; }
+  .btn:active { transform: scale(.96); }
+  .btn.ghost { background: rgba(255,255,255,.1); box-shadow: none; font-size: 15px; padding: 12px 26px; }
+  .btn.ad { background: linear-gradient(135deg,#4dd2ff,#7c5cff); box-shadow: 0 8px 24px rgba(77,210,255,.35); }
+  .btn:disabled { opacity: .4; pointer-events: none; }
+  .chip { display: inline-flex; align-items: center; gap: 5px; background: rgba(20,20,40,.85); color: #ffd84d;
+          font-weight: 700; font-size: 16px; padding: 7px 15px; border-radius: 30px; }
+
+  .screen { position: fixed; inset: 0; z-index: 20; display: none; flex-direction: column; align-items: center;
+            background: rgba(8,8,20,.86); backdrop-filter: blur(6px);
+            padding: calc(20px + var(--safe-top, env(safe-area-inset-top))) 20px calc(20px + var(--safe-bottom, env(safe-area-inset-bottom))); }
+  .screen.show { display: flex; }
+  .screen h2 { color: #fff; font-size: 24px; margin: 4px 0 14px; }
+  .topbar { width: 100%; max-width: 408px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .closeX { pointer-events: auto; cursor: pointer; color: #b8b8d0; font-size: 26px; width: 40px; height: 40px; line-height: 40px; text-align: center; background: rgba(255,255,255,.08); border-radius: 50%; }
+  .scroll { width: 100%; max-width: 408px; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+  /* ===== HOME ===== */
+  #home { justify-content: space-between; background: linear-gradient(180deg, rgba(10,10,25,.4), rgba(10,10,25,.85)); }
+  #home .top { width: 100%; max-width: 408px; display: flex; justify-content: flex-end; }
+  #home .center { text-align: center; }
+  #home .title { color: #fff; font-size: 40px; font-weight: 900; letter-spacing: -1px; text-shadow: 0 4px 20px rgba(255,92,141,.5); }
+  #home .sub { color: #8a8aa0; font-size: 14px; margin-top: 6px; }
+  #home .homebest { color: #ffd84d; font-size: 15px; margin-top: 18px; font-weight: 700; }
+  #home .howto { width: 100%; max-width: 320px; background: rgba(20,18,40,.55); border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px; padding: 14px 16px; text-align: left; backdrop-filter: blur(2px); }
+  #home .howto h3 { margin: 0 0 9px; font-size: 13px; color: #ffd84d; font-weight: 800; letter-spacing: .3px; }
+  #home .howto ul { margin: 0; padding: 0; }
+  #home .howto li { list-style: none; font-size: 12.5px; color: #c7c7da; line-height: 1.65; display: flex; gap: 8px; }
+  #home .howto li span { flex: none; }
+  #home .howto li b { color: #fff; font-weight: 700; }
+  #home .tabs { width: 100%; max-width: 408px; display: flex; gap: 10px; }
+  #home .tab { flex: 1; pointer-events: auto; cursor: pointer; background: rgba(255,255,255,.08); border-radius: 16px;
+               padding: 14px 0; text-align: center; color: #fff; font-size: 13px; font-weight: 600; }
+  #home .tab .ic { font-size: 22px; display: block; margin-bottom: 4px; }
+  #home .tab .badge { display:inline-block; min-width:16px; height:16px; line-height:16px; background:#ff3b5c; color:#fff; font-size:10px; border-radius:8px; padding:0 4px; margin-left:4px; vertical-align: top; }
+
+  /* ===== GAME OVER ===== */
+  #over h1 { color: #fff; font-size: 28px; margin-bottom: 4px; }
+  #over .fin { color: #ffd84d; font-size: 54px; font-weight: 800; }
+  #over .best { color: #8a8aa0; font-size: 14px; margin-bottom: 8px; }
+  #over .earn { color: #4dffa0; font-size: 17px; font-weight: 700; margin-bottom: 20px; }
+  #over .btns { display: flex; flex-direction: column; gap: 10px; align-items: center; width: 100%; max-width: 320px; }
+  #over .row2 { display: flex; gap: 10px; width: 100%; }
+  #over .row2 .btn { flex: 1; padding: 13px 0; font-size: 15px; }
+
+  /* ===== 스킨 그리드 ===== */
+  .shoptabs { width: 100%; max-width: 408px; display: flex; gap: 6px; margin-bottom: 10px; }
+  .shoptab { flex: 1; text-align: center; padding: 9px 0; border-radius: 12px; font-size: 13px; font-weight: 700;
+             color: #b8b8d0; background: rgba(255,255,255,.06); cursor: pointer; pointer-events: auto; }
+  .shoptab.active { color: #fff; background: linear-gradient(135deg,#ff5c8d,#7c5cff); }
+  .skins { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding-bottom: 16px; }
+  .skin { background: rgba(255,255,255,.06); border: 2px solid transparent; border-radius: 16px; padding: 16px 12px; text-align: center; cursor: pointer; }
+  .skin.equipped { border-color: #4dffa0; }
+  .skin .ball { width: 52px; height: 52px; border-radius: 50%; margin: 0 auto 10px; box-shadow: 0 4px 16px rgba(0,0,0,.4); }
+  .skin .nm { color: #fff; font-size: 14px; font-weight: 700; }
+  .skin .st { font-size: 13px; font-weight: 700; margin-top: 5px; }
+  .skin .st.own { color: #8a8aa0; }
+  .skin .st.eq { color: #4dffa0; }
+  .skin .st.buy { color: #ffd84d; }
+  .skin .st.lock { color: #ff6b6b; }
+
+  /* ===== 미션/데일리 ===== */
+  .mission, .rankrow { display: flex; align-items: center; background: rgba(255,255,255,.06); border-radius: 14px; padding: 13px 15px; margin-bottom: 10px; }
+  .mission .info { flex: 1; }
+  .mission .mt { color: #fff; font-size: 14px; font-weight: 600; }
+  .mission .bar { height: 6px; background: rgba(255,255,255,.12); border-radius: 3px; margin-top: 7px; overflow: hidden; }
+  .mission .bar > i { display: block; height: 100%; background: linear-gradient(90deg,#4dd2ff,#7c5cff); }
+  .mission .pct { color: #8a8aa0; font-size: 11px; margin-top: 4px; }
+  .mission .act { margin-left: 12px; }
+  .mission .reward { color: #ffd84d; font-size: 13px; font-weight: 700; white-space: nowrap; }
+  .miniBtn { pointer-events:auto; cursor:pointer; border:none; border-radius:20px; font-weight:700; font-size:12px; padding:8px 14px; color:#fff; background:linear-gradient(135deg,#4dffa0,#4dd2ff); }
+  .miniBtn:disabled { opacity:.35; pointer-events:none; }
+  .dailybox { width:100%; max-width:460px; background:rgba(255,255,255,.06); border-radius:16px; padding:20px; text-align:center; margin-bottom:16px; }
+  .dailybox .streak { color:#ffd84d; font-size:14px; font-weight:700; margin-bottom:10px; }
+  .dailybox .amt { color:#fff; font-size:30px; font-weight:800; margin-bottom:14px; }
+  .daygrid { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; margin-bottom:14px; }
+  .daycell { background:rgba(255,255,255,.05); border:1px solid transparent; border-radius:9px; padding:7px 2px; position:relative; }
+  .daycell .dl { font-size:9px; color:#8a8aa0; }
+  .daycell .di { font-size:17px; margin:2px 0; }
+  .daycell .dv { font-size:9px; color:#c7c7da; font-weight:700; }
+  .daycell.today { border-color:#ffd84d; background:rgba(255,216,77,.14); }
+  .daycell.done { opacity:.45; }
+  .daycell .dc { position:absolute; top:2px; right:4px; color:#4dffa0; font-size:10px; }
+  .msec { color:#fff; font-size:15px; font-weight:800; margin:6px 2px 8px; }
+  .msec .sub { color:#8a8aa0; font-size:11px; font-weight:600; margin-left:6px; }
+
+  /* ===== 랭킹 ===== */
+  .tier { text-align:center; margin-bottom:14px; }
+  .tier .tname { font-size:30px; font-weight:900; }
+  .tier .tsub { color:#8a8aa0; font-size:13px; margin-top:2px; }
+  .rankrow { gap:12px; }
+  .rankrow.you { background:rgba(255,216,77,.14); border:1px solid rgba(255,216,77,.4); }
+  .rankrow .rk { width:30px; color:#8a8aa0; font-weight:800; font-size:15px; text-align:center; }
+  .rankrow .nm { flex:1; color:#fff; font-weight:600; font-size:15px; }
+  .rankrow .sc { color:#ffd84d; font-weight:800; font-size:15px; }
+
+  /* ===== 광고 목업 ===== */
+  #admodal { position: fixed; inset: 0; z-index: 40; display: none; flex-direction: column; align-items: center; justify-content: center; background: #000; }
+  #admodal.show { display: flex; }
+  #admodal .adlabel { position: absolute; top: 20px; left: 20px; background: #ffd84d; color: #000; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 4px; }
+  #admodal .adbody { color: #fff; text-align: center; }
+  #admodal .adbig { font-size: 40px; margin-bottom: 10px; }
+  #admodal .adcnt { color: #8a8aa0; font-size: 14px; margin-top: 14px; }
+
+  /* ===== 닉네임 설정 모달 · 계정 연결 모달 (스타일 공유) ===== */
+  #nickmodal, #acctmodal { position: fixed; inset: 0; z-index: 45; display: none; align-items: center; justify-content: center;
+               background: rgba(8,8,20,.86); backdrop-filter: blur(6px); padding: 20px; }
+  #nickmodal.show, #acctmodal.show { display: flex; }
+  #nickmodal .card, #acctmodal .card { width: 100%; max-width: 360px; background: #241638; border-radius: 20px; padding: 22px;
+                     box-shadow: 0 12px 40px rgba(0,0,0,.5); }
+  #nickmodal h3, #acctmodal h3 { color: #fff; font-size: 20px; margin: 0 0 16px; text-align: center; }
+  #nickmodal input { width: 100%; box-sizing: border-box; background: rgba(255,255,255,.08);
+                     border: 2px solid rgba(255,255,255,.15); border-radius: 12px; color: #fff;
+                     font-size: 17px; font-weight: 700; padding: 13px 14px; outline: none; }
+  #nickmodal input:focus { border-color: #4dffa0; }
+  #nickmodal .nickmeta { display: flex; justify-content: space-between; margin: 8px 2px 0; font-size: 12px; }
+  #nickmodal .nickmeta .hintnm, #nickmodal .nickmeta .cnt { color: #8a8aa0; }
+  #nickmodal .err, #acctmodal .err { color: #ff6b6b; font-size: 13px; min-height: 18px; margin: 8px 2px 4px; }
+  #nickmodal .acts, #acctmodal .acts { display: flex; gap: 10px; margin-top: 10px; }
+  #nickmodal .acts .btn, #acctmodal .acts .btn { flex: 1; padding: 13px 0; font-size: 15px; }
+  #nickmodal .skip, #acctmodal .skip { text-align: center; margin-top: 12px; }
+  #nickmodal .skip a, #acctmodal .skip a { color: #8a8aa0; font-size: 13px; text-decoration: underline; cursor: pointer; }
+
+  /* 계정 연결 모달 전용 */
+  #acctmodal .status { color: #c9c9dd; font-size: 13px; line-height: 1.55; text-align: center; margin: -6px 0 6px; }
+  #acctmodal .status b { color: #4dffa0; }
+  .sso { pointer-events: auto; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+         width: 100%; box-sizing: border-box; border: none; border-radius: 12px; padding: 13px 14px; margin-top: 10px;
+         font-size: 15px; font-weight: 700; font-family: inherit; }
+  .sso:active { transform: scale(.98); }
+  .sso:disabled { opacity: .45; pointer-events: none; }
+  .sso svg { width: 20px; height: 20px; flex: none; }
+  /* Google 브랜딩 가이드: 흰 배경 + 4색 G 로고 / Apple HIG: 검정 배경 + 흰 로고 */
+  .sso.google { background: #fff; color: #1f1f1f; border: 1px solid #dadce0; }
+  .sso.apple { background: #000; color: #fff; }
+  .sso.apple svg { fill: #fff; }
+  .sso.done { opacity: .55; pointer-events: none; }
+  #acctmodal .skip a.danger { color: #ff8080; }
+  #acctmodal .confirm { display: none; margin-top: 12px; padding: 12px; border-radius: 12px; font-size: 13px; line-height: 1.5;
+                        color: #ffb3b3; background: rgba(255,107,107,.1); border: 1px solid rgba(255,107,107,.35); }
+  #acctmodal .confirm.show { display: block; }
+  #acctmodal .confirm .btn { width: 100%; margin-top: 10px; padding: 12px 0; font-size: 14px; background: #c0392b; box-shadow: none; }
+
+  /* ===== 토스트 ===== */
+  #toast { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%) translateY(20px); z-index: 50;
+           background: rgba(20,20,40,.95); color: #fff; font-size: 14px; padding: 12px 22px; border-radius: 30px; opacity: 0; transition: all .25s; pointer-events: none; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ===== 튜닝 패널 ===== */
+  #panel { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(12,12,26,.92); z-index: 35;
+           padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); transform: translateY(calc(100% - 30px)); transition: transform .25s; }
+  #panel.open { transform: translateY(0); }
+  #panel.hide { display: none; }
+  #panel .grip { text-align: center; color: #6a6a85; font-size: 11px; height: 20px; cursor: pointer; user-select: none; }
+  #panel .row { display: flex; align-items: center; gap: 10px; margin: 6px 0; }
+  #panel label { color: #b8b8d0; font-size: 12px; width: 92px; flex: none; }
+  #panel input[type=range] { flex: 1; }
+  #panel .val { color: #ffd84d; font-size: 12px; width: 44px; text-align: right; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="rage"></div>
+<div id="hurt"></div>
+
+<!-- 게임 중 HUD -->
+<div id="hud">
+  <div id="lives">❤️❤️❤️</div>
+  <div id="score">0</div>
+  <div id="combo"></div>
+  <div id="depth">DEPTH 0</div>
+</div>
+<div id="hint">드래그해서 타워를 돌리세요 ↻</div>
+
+<!-- 홈 -->
+<div id="home" class="screen show">
+  <div class="top" style="justify-content:space-between"><span class="chip" id="homeNick" style="color:#fff;cursor:pointer">👤 Player</span><span class="chip" id="homeCoins">🪙 0</span></div>
+  <div class="center">
+    <div class="title">BOUNCE<br>TOWER</div>
+    <div class="sub">드래그로 타워를 돌려 틈으로 떨어지세요</div>
+    <div class="homebest" id="homeBest">BEST 0</div>
+  </div>
+  <div style="width:100%;max-width:460px;display:flex;flex-direction:column;gap:16px;align-items:center">
+    <div class="howto">
+      <h3>게임 방법</h3>
+      <ul>
+        <li><span>👆</span><div><b>드래그</b>로 타워를 좌우로 돌려요</div></li>
+        <li><span>🕳️</span><div>빈틈에 맞춰 공을 <b>아래로 통과</b>시켜요</div></li>
+        <li><span>🟥</span><div><b>빨간 발판</b>은 위험 — 닿으면 목숨이 깎여요</div></li>
+        <li><span>🔥</span><div>연속 통과로 <b>콤보</b>를 쌓으면 잠깐 <b>무적</b>!</div></li>
+        <li><span>❤️</span><div>목숨 <b>3개</b>, 더 깊이 내려갈수록 고득점</div></li>
+      </ul>
+    </div>
+    <button class="btn" id="playBtn" style="width:100%;max-width:320px">▶ 플레이</button>
+    <div class="tabs">
+      <div class="tab" id="tabShop"><span class="ic">🛍️</span>상점</div>
+      <div class="tab" id="tabDaily"><span class="ic">🎁</span>데일리<span id="dailyBadge"></span></div>
+      <div class="tab" id="tabRank"><span class="ic">🏆</span>랭킹</div>
+    </div>
+  </div>
+</div>
+
+<!-- 게임 오버 -->
+<div id="over" class="screen" style="justify-content:center">
+  <h1>GAME OVER</h1>
+  <div class="fin" id="finalScore">0</div>
+  <div class="best" id="bestScore">BEST 0</div>
+  <div class="earn" id="earnCoins">+0 🪙</div>
+  <div class="btns">
+    <button class="btn" id="reviveItemBtn" style="display:none">🎟️ 부활권 사용</button>
+    <button class="btn ad" id="reviveBtn">🎬 광고 보고 부활</button>
+    <button class="btn ad" id="doubleBtn">🎬 코인 2배 받기</button>
+    <div class="row2">
+      <button class="btn" id="retryBtn">다시 하기</button>
+      <button class="btn ghost" id="homeBtn">🏠 홈</button>
+    </div>
+  </div>
+</div>
+
+<!-- 상점 -->
+<div id="shop" class="screen">
+  <div class="topbar">
+    <h2 style="margin:0">🛍️ 상점</h2>
+    <div style="display:flex;gap:8px">
+      <span class="chip" id="shopCoins">🪙 0</span>
+    </div>
+  </div>
+  <div class="shoptabs">
+    <div class="shoptab active" data-cat="skin">공</div>
+    <div class="shoptab" data-cat="trail">트레일</div>
+    <div class="shoptab" data-cat="theme">배경</div>
+    <div class="shoptab" data-cat="item">소모품</div>
+  </div>
+  <div class="scroll">
+    <div class="skins" id="skinGrid"></div>
+  </div>
+  <button class="btn ghost" id="shopClose" style="margin-top:12px">닫기</button>
+</div>
+
+<!-- 데일리 -->
+<div id="daily" class="screen">
+  <div class="topbar"><h2 style="margin:0">🎁 데일리</h2>
+    <div style="display:flex;gap:8px">
+      <span class="chip" id="dailyCoins">🪙 0</span>
+    </div>
+  </div>
+  <div class="dailybox">
+    <div class="streak" id="dailyStreak">🔥 연속 출석 0일</div>
+    <div class="daygrid" id="dayGrid"></div>
+    <button class="btn" id="claimDaily">출석 보상 받기</button>
+  </div>
+  <div class="scroll" id="missionList"></div>
+  <button class="btn ghost" id="dailyClose" style="margin-top:12px">닫기</button>
+</div>
+
+<!-- 랭킹 -->
+<div id="rank" class="screen">
+  <div class="topbar"><h2 style="margin:0">🏆 랭킹</h2><span class="closeX" id="rankClose">×</span></div>
+  <div class="shoptabs" id="rankTabs">
+    <div class="shoptab active" data-rank="all">전체</div>
+    <div class="shoptab" data-rank="season">🏅 시즌</div>
+  </div>
+  <div class="tier" id="tierBox"></div>
+  <div class="scroll" id="rankList"></div>
+</div>
+
+<!-- 광고 목업 -->
+<div id="admodal">
+  <div class="adlabel">AD · 프로토타입 목업</div>
+  <div class="adbody">
+    <div class="adbig">🎬</div>
+    <div>광고 재생 중…</div>
+    <div class="adcnt" id="adcnt">3</div>
+  </div>
+</div>
+
+<!-- 닉네임 설정 -->
+<div id="nickmodal">
+  <div class="card">
+    <h3>닉네임 설정</h3>
+    <input id="nickInput" type="text" maxlength="12" placeholder="닉네임" autocomplete="off" spellcheck="false" />
+    <div class="nickmeta"><span class="hintnm">한글·영문·숫자 2~12자</span><span class="cnt" id="nickCount">0/12</span></div>
+    <div class="err" id="nickErr"></div>
+    <div class="acts">
+      <button class="btn ghost" id="nickCancel">취소</button>
+      <button class="btn" id="nickSave">저장</button>
+    </div>
+    <div class="skip"><a id="nickSkip">나중에 하기</a></div>
+    <div class="skip" id="nickAcctRow" style="display:none"><a id="nickAcct">☁️ 계정 연결로 기록 지키기</a></div>
+  </div>
+</div>
+
+<!-- 계정 연결 (Google/Apple) — 네이티브 전용. 설계: 바운스타워_닉네임계정설계.md Phase 2 -->
+<div id="acctmodal">
+  <div class="card">
+    <h3>☁️ 계정</h3>
+    <div class="status" id="acctStatus"></div>
+    <button class="sso google" id="acctGoogle">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      <span>Google로 계속하기</span>
+    </button>
+    <button class="sso apple" id="acctApple">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>
+      <span>Apple로 로그인</span>
+    </button>
+    <div class="err" id="acctErr"></div>
+    <div class="acts"><button class="btn ghost" id="acctClose">닫기</button></div>
+    <div class="skip" id="acctLinks"><a id="acctSignOut">로그아웃</a> &nbsp;·&nbsp; <a id="acctDelete" class="danger">계정 삭제</a></div>
+    <div class="confirm" id="acctConfirm">
+      랭킹 기록과 클라우드 세이브가 <b>영구 삭제</b>되고 연결이 해제돼요. 이 기기의 진행도는 남아요.
+      <button class="btn" id="acctDeleteGo">정말 삭제할래요</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- 튜닝 패널 -->
+<div id="panel" class="hide">
+  <div class="grip" id="grip">⚙ 손맛 튜닝</div>
+  <div class="row"><button id="rageTest" class="miniBtn" style="width:100%;padding:10px;font-size:13px">🔥 무적 테스트 (즉시 발동)</button></div>
+  <div class="row"><label>중력</label><input id="s_grav" type="range" min="20" max="90" step="1"><span class="val" id="v_grav"></span></div>
+  <div class="row"><label>튕김 힘</label><input id="s_bounce" type="range" min="8" max="30" step="0.5"><span class="val" id="v_bounce"></span></div>
+  <div class="row"><label>회전 감도</label><input id="s_rot" type="range" min="0.002" max="0.02" step="0.001"><span class="val" id="v_rot"></span></div>
+  <div class="row"><label>위험 비율</label><input id="s_danger" type="range" min="0" max="0.6" step="0.02"><span class="val" id="v_danger"></span></div>
+  <div class="row"><label>링 간격</label><input id="s_gap" type="range" min="1.6" max="3.2" step="0.1"><span class="val" id="v_gap"></span></div>
+</div>
+
+<script src="vendor/three.min.js"></script>
+<!-- 포스트프로세싱 (블룸) -->
+<script src="vendor/CopyShader.js"></script>
+<script src="vendor/LuminosityHighPassShader.js"></script>
+<script src="vendor/Pass.js"></script>
+<script src="vendor/ShaderPass.js"></script>
+<script src="vendor/MaskPass.js"></script>
+<script src="vendor/EffectComposer.js"></script>
+<script src="vendor/RenderPass.js"></script>
+<script src="vendor/UnrealBloomPass.js"></script>
+<script>
+// ============================================================
+//  바운스 타워 — Phase 2 프로토타입
+//  코어(물리·무적·목숨) + 메타(코인·상점·스킨·데일리·미션·랭킹·광고목업)
+// ============================================================
+
+// ---- 튜닝 파라미터 ----
+const P = { gravity: 48, bounce: 19, rotateSpeed: 0.008, dangerMax: 0.42, ringSpacing: 2.2 };
+
+const N_SLOTS = 12, SLOT_ANG = (Math.PI * 2) / N_SLOTS;
+const R_INNER = 1.7, R_OUTER = 3.1, R_MID = (R_INNER + R_OUTER) / 2, BALL_R = 0.55;
+const ACTIVE_RINGS = 14, RAGE_RINGS = 7, MAX_LIVES = 3, HIT_INVULN = 1.0;
+let RAGE_COMBO = 5;   // Remote Config(rage_combo)로 조정 가능
+
+// ---- Remote Config (네이티브 주입, 실패 시 이 기본값 그대로) ----
+// 키는 lib/remote_config.dart의 toJson()과 짝. 브라우저에서는 항상 기본값.
+const RC = {
+  dangerMax: 0.42, rageCombo: 5, coinMult: 1.0,
+  seasonEnabled: true, seasonGoal: 60,
+  firstRunsNoAds: 3,        // 첫 N판은 전면광고 없음 (첫인상 보호, 심화설계 4.3)
+  interstitialEveryRuns: 3, // 그 이후 M판마다 1회
+};
+
+// ---- 시즌 (2주 단위) ----
+// ⚠️ lib/ranking.dart의 seasonEpoch/seasonDays와 **같은 값**이어야 한다.
+// 브라우저 목업에서도 시즌이 돌아가도록 웹/네이티브가 각자 독립 계산한다.
+const SEASON_EPOCH_MS = Date.UTC(2026, 0, 5);   // 2026-01-05(월) 00:00 UTC
+const SEASON_DAYS = 14, SEASON_MS = SEASON_DAYS * 86400000;
+function seasonIndex() { const d = Date.now() - SEASON_EPOCH_MS; return d <= 0 ? 0 : Math.floor(d / SEASON_MS); }
+function seasonId() { return 'S' + seasonIndex(); }
+function seasonEndMs() { return SEASON_EPOCH_MS + SEASON_MS * (seasonIndex() + 1); }
+function seasonLeftText() {
+  const ms = seasonEndMs() - Date.now();
+  if (ms <= 0) return '곧 종료';
+  const d = Math.floor(ms / 86400000), h = Math.floor(ms / 3600000) % 24;
+  return d > 0 ? (d + '일 ' + h + '시간 남음') : (h + '시간 남음');
+}
+
+// ---- 스킨 정의 ----
+const SKINS = [
+  { id: 'classic', name: '클래식', price: 0,   color: 0xff5c8d, emissive: 0x551025 },
+  { id: 'aqua',    name: '아쿠아', price: 50,  color: 0x4dd2ff, emissive: 0x0a3550 },
+  { id: 'lime',    name: '라임',   price: 90,  color: 0x4dffa0, emissive: 0x0a5030 },
+  { id: 'gold',    name: '골드',   price: 160, color: 0xffd84d, emissive: 0x554010 },
+  { id: 'violet',  name: '바이올렛', price: 160, color: 0x7c5cff, emissive: 0x2a1a55 },
+  { id: 'shadow',  name: '섀도우', price: 300, color: 0x1a1a2e, emissive: 0x000000 },
+  { id: 'rainbow', name: '레인보우', price: 600, color: 0xffffff, emissive: 0x222222, rainbow: true },
+];
+
+// ---- 시즌 한정 스킨 ----  시즌마다 1종만 로테이션 노출.
+// 코인으로 살 수 없고, **그 시즌 최고점이 RC.seasonGoal 이상**이면 해금된다.
+// 시즌이 지나면 획득 경로가 사라짐(한정) — 이미 가진 스킨은 영구 보유·장착 가능.
+const SEASON_SKINS = [
+  { id: 'sea_nebula', name: '네뷸라',   price: -1, color: 0x9c6bff, emissive: 0x3a1a6e, season: true },
+  { id: 'sea_ember',  name: '엠버',     price: -1, color: 0xff6a2b, emissive: 0x551505, season: true },
+  { id: 'sea_frost',  name: '프로스트', price: -1, color: 0x9fe8ff, emissive: 0x123a55, season: true },
+];
+function seasonSkin() { return SEASON_SKINS[seasonIndex() % SEASON_SKINS.length]; }
+function allSkins() { return SKINS.concat(SEASON_SKINS); }
+
+// ---- 트레일 이펙트 (공 잔상) ----  color:null = 공 색을 따라감
+const TRAILS = [
+  { id: 'basic',    name: '기본',   price: 0,   color: null,     width: 0.62, life: 0.40, opacity: 0.65 },
+  { id: 'star',     name: '별가루', price: 80,  color: 0xfff1a8, width: 0.46, life: 0.55, opacity: 0.75 },
+  { id: 'flame',    name: '불꽃',   price: 120, color: 0xff6a2b, width: 0.72, life: 0.42, opacity: 0.85 },
+  { id: 'neon',     name: '네온',   price: 180, color: 0x35f0ff, width: 0.6,  life: 0.62, opacity: 0.8 },
+  { id: 'rainbowT', name: '무지개', price: 250, color: null,     width: 0.6,  life: 0.62, opacity: 0.8, rainbow: true },
+];
+
+// ---- 배경 테마 (하늘 그라데이션 + 오로라 조명색) ----
+const THEMES = [
+  { id: 'aurora', name: '오로라',     price: 0,   top: 0x1f8f7a, mid: 0x3a1a6e, bot: 0x05030f, l1: 0x2fffc0, l2: 0x9c6bff },
+  { id: 'sunset', name: '석양',       price: 120, top: 0xff9e6b, mid: 0x7a2e6e, bot: 0x140312, l1: 0xff7a5c, l2: 0xffd84d },
+  { id: 'abyss',  name: '심해',       price: 150, top: 0x1a6fa8, mid: 0x0a2a55, bot: 0x01030a, l1: 0x2fa8ff, l2: 0x1f4f9c },
+  { id: 'cyber',  name: '사이버펑크', price: 220, top: 0xff2bd0, mid: 0x2a1a6e, bot: 0x05030f, l1: 0xff2bd0, l2: 0x2fffc0 },
+  { id: 'sakura', name: '벚꽃',       price: 220, top: 0xffb7d5, mid: 0x7a4a8e, bot: 0x140a1a, l1: 0xffaad0, l2: 0xc08cff },
+];
+
+// ---- 소모품 ----
+const CONSUMABLES = [
+  { id: 'revive',  name: '부활권',     price: 80,  icon: '🎟️', desc: '사망 시 1회 즉시 부활(광고 없이)' },
+  { id: 'booster', name: '코인 부스터', price: 120, icon: '💰', desc: '다음 3판 코인 2배' },
+  { id: 'shield',  name: '시작 보호막', price: 60,  icon: '🛡️', desc: '이번 판 첫 피격 1회 무효' },
+];
+
+// ---- 7일 출석 보상 사이클 ----
+const DAILY_REWARDS = [
+  { coin: 30 },
+  { coin: 50 },
+  { coin: 80 },
+  { item: 'booster' },          // 4일차: 코인 부스터
+  { coin: 120 },
+  { item: 'shield' },           // 6일차: 보호막
+  { coin: 300 },                // 7일차: 잭팟
+];
+
+// ---- 업적 (평생, 1회 보상) ----  stat: 통계 키 / skins=보유 스킨 수
+const ACHIEVEMENTS = [
+  { id: 'depth50',  name: '깊이 50 도달',   stat: 'bestDepth', target: 50,  reward: { coin: 50 } },
+  { id: 'combo15',  name: '15 콤보 달성',   stat: 'bestCombo', target: 15,  reward: { coin: 50 } },
+  { id: 'rage10',   name: '무적 10회 발동', stat: 'rages',     target: 10,  reward: { coin: 50 } },
+  { id: 'depth100', name: '깊이 100 도달',  stat: 'bestDepth', target: 100, reward: { coin: 100 } },
+  { id: 'games50',  name: '50판 플레이',    stat: 'games',     target: 50,  reward: { coin: 100 } },
+  { id: 'skins5',   name: '스킨 5종 보유',  stat: 'skins',     target: 5,   reward: { coin: 100 } },
+];
+
+const hexStr = c => '#' + c.toString(16).padStart(6, '0');
+
+// ---- 저장 시스템 ----
+const SAVE_KEY = 'bt_save_v2';
+function todayStr() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate(); }
+function yesterdayStr() { const d = new Date(); d.setDate(d.getDate() - 1); return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate(); }
+function weekStr() { const d = new Date(); const jan1 = new Date(d.getFullYear(), 0, 1); const w = Math.ceil((((d - jan1) / 86400000) + jan1.getDay() + 1) / 7); return d.getFullYear() + '-W' + w; }
+function freshMissions() {
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  return [
+    { type: 'combo', target: pick([5, 8, 12]),    reward: 40, claimed: false },
+    { type: 'depth', target: pick([20, 40, 60]),  reward: 50, claimed: false },
+    { type: 'coins', target: pick([40, 80, 120]), reward: 35, claimed: false },
+  ];
+}
+function freshWeekly() {
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  return [
+    { type: 'games', target: pick([10, 15, 20]),   reward: 50, claimed: false },
+    { type: 'depth', target: pick([80, 120, 160]), reward: 100, claimed: false },
+    { type: 'coins', target: pick([300, 500, 800]), reward: 100, claimed: false },
+  ];
+}
+let SAVE = load();
+function load() {
+  let s = {};
+  try { s = JSON.parse(localStorage.getItem(SAVE_KEY)) || {}; } catch (e) {}
+  s.coins = s.coins || 0;
+  s.best = s.best || 0;
+  s.ownedSkins = s.ownedSkins || ['classic'];
+  s.equipped = s.equipped || 'classic';
+  s.ownedTrails = s.ownedTrails || ['basic'];
+  s.equippedTrail = s.equippedTrail || 'basic';
+  s.ownedThemes = s.ownedThemes || ['aurora'];
+  s.equippedTheme = s.equippedTheme || 'aurora';
+  s.items = s.items || { revive: 0, booster: 0, shield: 0 };
+  s.boosterRuns = s.boosterRuns || 0;
+  s.runsSinceAd = s.runsSinceAd || 0;   // 마지막 전면광고 이후 플레이한 판수
+  s.notifAsked = s.notifAsked || false; // 알림 권한을 이미 물어봤는지
+  s.adFree = s.adFree || false;
+  s.daily = s.daily || { last: '', streak: 0 };
+  s.nickname = s.nickname || ('Player' + Math.floor(1000 + Math.random() * 9000));
+  s.nickSet = s.nickSet || false;   // 사용자가 직접 닉네임을 정했는지(최초 모달 노출 제어)
+  s.linkPrompted = s.linkPrompted || false;   // 계정 연결 권유를 이미 띄웠는지(1회만, 기기 로컬)
+  if (!s.missions || s.missions.date !== todayStr()) {
+    s.missions = { date: todayStr(), defs: freshMissions(), prog: { combo: 0, depth: 0, coins: 0 } };
+  }
+  if (!s.weekly || s.weekly.week !== weekStr()) {
+    s.weekly = { week: weekStr(), defs: freshWeekly(), prog: { games: 0, depth: 0, coins: 0 } };
+  }
+  s.stats = s.stats || { games: 0, bestDepth: 0, bestCombo: 0, rages: 0, coinsTotal: 0 };
+  s.achvClaimed = s.achvClaimed || {};
+  // 시즌 최고점 — 시즌이 바뀌면 자동 리셋.
+  // 획득한 시즌 스킨은 ownedSkins에 남으므로 영구 보유된다.
+  if (!s.season || s.season.id !== seasonId()) s.season = { id: seasonId(), best: 0 };
+  return s;
+}
+function save() { localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); cloudPushDebounced(); }
+
+// ───────────── 클라우드 세이브 (네이티브 전용, Firebase users/{uid}) ─────────────
+// 웹이 진실원본(localStorage). 시작 시 클라우드를 끌어와 병합하고, 이후 변경은
+// 디바운스로 백업. 병합 전(_cloudReady=false)에는 푸시를 막아 빈 로컬이 덮어쓰지 않게 한다.
+let _cloudReady = false;     // 첫 동기화(pull+merge) 완료 여부
+let _cloudOn = false;        // 클라우드 활성(배지 표시용)
+let _cloudTimer = null;
+function cloudPushDebounced() {
+  if (!_cloudReady || !nativeBridge()) return;
+  if (_cloudTimer) clearTimeout(_cloudTimer);
+  _cloudTimer = setTimeout(() => {
+    try { window.flutter_inappwebview.callHandler('cloudSave', SAVE); } catch (e) {}
+  }, 2500);
+}
+function _maxNum(a, b) { a = +a || 0; b = +b || 0; return a > b ? a : b; }
+function _unionArr(a, b) { return [...new Set([...(a || []), ...(b || [])])]; }
+function mergeCloud(c) {
+  if (!c || typeof c !== 'object') return;
+  SAVE.coins = _maxNum(SAVE.coins, c.coins);
+  SAVE.best = _maxNum(SAVE.best, c.best);
+  SAVE.ownedSkins = _unionArr(SAVE.ownedSkins, c.ownedSkins);
+  SAVE.ownedTrails = _unionArr(SAVE.ownedTrails, c.ownedTrails);
+  SAVE.ownedThemes = _unionArr(SAVE.ownedThemes, c.ownedThemes);
+  if (c.nickSet && c.nickname) { SAVE.nickname = c.nickname; SAVE.nickSet = true; }
+  if (c.items) {
+    SAVE.items.revive = _maxNum(SAVE.items.revive, c.items.revive);
+    SAVE.items.booster = _maxNum(SAVE.items.booster, c.items.booster);
+    SAVE.items.shield = _maxNum(SAVE.items.shield, c.items.shield);
+  }
+  SAVE.adFree = SAVE.adFree || !!c.adFree;
+  if (c.stats) { for (const k in c.stats) SAVE.stats[k] = _maxNum(SAVE.stats[k], c.stats[k]); }
+  if (c.achvClaimed) { for (const k in c.achvClaimed) if (c.achvClaimed[k]) SAVE.achvClaimed[k] = true; }
+  // 시즌 최고점은 **같은 시즌일 때만** 병합(지난 시즌 값이 넘어오면 무시)
+  if (c.season && c.season.id === SAVE.season.id) {
+    SAVE.season.best = _maxNum(SAVE.season.best, c.season.best);
+  }
+  // daily/missions/weekly/boosterRuns/equipped는 시간·세션 의존 → 로컬 유지
+}
+
+// ───────────── Remote Config (네이티브 주입) ─────────────
+// Dart의 RemoteConfigService.init()이 Firebase 초기화 뒤에 끝나므로, 준비될
+// 때까지(ready) 폴링한다. 실패해도 RC 기본값이 남아 게임은 정상 동작.
+async function applyRemoteConfig() {
+  if (!nativeBridge()) return;
+  for (let i = 0; i < 10; i++) {
+    let c = null;
+    try { c = await window.flutter_inappwebview.callHandler('getRemoteConfig'); } catch (e) {}
+    if (c) {
+      Object.assign(RC, c);
+      P.dangerMax = RC.dangerMax;
+      RAGE_COMBO = RC.rageCombo;
+      // 튜닝 패널 슬라이더도 원격 값에 맞춰 재동기화(개발용 패널이 거짓말하지 않게)
+      const sd = $('s_danger'), vd = $('v_danger');
+      if (sd) { sd.value = P.dangerMax; vd.textContent = P.dangerMax.toFixed(2); }
+      if (c.ready) return;
+    }
+    await new Promise(r => setTimeout(r, 500));
+  }
+}
+async function cloudSyncOnStart() {
+  if (!nativeBridge()) { _cloudReady = true; return; }
+  // Dart 익명 로그인(ranking.init)이 끝날 때까지 최대 ~5초 폴링
+  for (let i = 0; i < 10; i++) {
+    const st = await fetchAccountState();
+    if (st && st.enabled) break;
+    await new Promise(r => setTimeout(r, 500));
+  }
+  await cloudResync();   // pull+merge → 저장/푸시 → UI. 계정 연결·전환 뒤에도 같은 함수를 다시 탄다.
+}
+window.btCloudReady = cloudSyncOnStart;
+function currentSkin() { return allSkins().find(s => s.id === SAVE.equipped) || SKINS[0]; }
+function currentTrail() { return TRAILS.find(t => t.id === SAVE.equippedTrail) || TRAILS[0]; }
+function currentTheme() { return THEMES.find(t => t.id === SAVE.equippedTheme) || THEMES[0]; }
+
+// ---- Three.js 셋업 ----
+const app = document.getElementById('app');
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x070315, 0.028);  // 우주 깊이감
+const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 200);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.outputEncoding = THREE.sRGBEncoding;
+app.appendChild(renderer.domElement);
+
+// ---- 오로라 그라데이션 하늘 (카메라 따라다님) ----
+const skyMat = new THREE.ShaderMaterial({
+  side: THREE.BackSide, depthWrite: false, fog: false,
+  uniforms: {
+    cTop: { value: new THREE.Color(0x1f8f7a) }, // 오로라 청록
+    cMid: { value: new THREE.Color(0x3a1a6e) }, // 보라
+    cBot: { value: new THREE.Color(0x05030f) }, // 심연
+    t:    { value: 0 },
+  },
+  vertexShader: 'varying vec3 vP; void main(){ vP=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+  fragmentShader:
+    'varying vec3 vP; uniform vec3 cTop,cMid,cBot; uniform float t;' +
+    'void main(){ float h=normalize(vP).y*0.5+0.5;' +
+    'vec3 c = h<0.5 ? mix(cBot,cMid,h*2.0) : mix(cMid,cTop,(h-0.5)*2.0);' +
+    'float a = sin(vP.x*0.12+t)*0.5+0.5;' +              // 오로라 리본 일렁임
+    'c += cTop*0.18*a*smoothstep(0.45,1.0,h);' +
+    'gl_FragColor=vec4(c,1.0);}',
+});
+const sky = new THREE.Mesh(new THREE.SphereGeometry(80, 24, 24), skyMat);
+scene.add(sky);
+
+// ---- 별 ----
+const starN = 700, starPos = new Float32Array(starN * 3);
+for (let i = 0; i < starN; i++) {
+  const r = 30 + Math.random() * 45, a = Math.random() * Math.PI * 2, y = (Math.random() - 0.5) * 120;
+  starPos[i*3] = Math.cos(a) * r; starPos[i*3+1] = y; starPos[i*3+2] = Math.sin(a) * r;
+}
+const starGeo = new THREE.BufferGeometry();
+starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({
+  color: 0xbfe6ff, size: 0.35, transparent: true, opacity: 0.9, depthWrite: false, fog: false }));
+scene.add(stars);
+
+// ---- 조명 (오로라 컬러) ----
+scene.add(new THREE.AmbientLight(0x3a4a6a, 0.38));
+const dir = new THREE.DirectionalLight(0xbfe6ff, 0.45); dir.position.set(5, 12, 8); scene.add(dir);
+const auroraL1 = new THREE.PointLight(0x2fffc0, 0.7, 40); auroraL1.position.set(-6, 4, 6); scene.add(auroraL1);
+const auroraL2 = new THREE.PointLight(0x9c6bff, 0.7, 40); auroraL2.position.set(6, -4, 6); scene.add(auroraL2);
+
+// 장착 테마를 하늘 그라데이션 + 오로라 조명색에 반영
+function applyTheme() {
+  const th = currentTheme();
+  skyMat.uniforms.cTop.value.setHex(th.top);
+  skyMat.uniforms.cMid.value.setHex(th.mid);
+  skyMat.uniforms.cBot.value.setHex(th.bot);
+  auroraL1.color.setHex(th.l1);
+  auroraL2.color.setHex(th.l2);
+}
+applyTheme();
+const point = new THREE.PointLight(0xff5c8d, 0.0, 22); scene.add(point); // RAGE 글로우
+
+// ---- 중앙 기둥 (어두운 글래스 + 림 발광) ----
+const pole = new THREE.Mesh(
+  new THREE.CylinderGeometry(R_INNER * 0.82, R_INNER * 0.82, 400, 48),
+  new THREE.MeshStandardMaterial({ color: 0x0e0a2a, emissive: 0x140a3a, emissiveIntensity: 0.5, metalness: 0.6, roughness: 0.35 }));
+scene.add(pole);
+
+const tower = new THREE.Group(); scene.add(tower);
+
+// ---- 공 (발광 코어 + 트레일) ----
+const ball = new THREE.Mesh(
+  new THREE.SphereGeometry(BALL_R, 32, 32),
+  new THREE.MeshStandardMaterial({ color: 0xff5c8d, emissive: 0xff5c8d, emissiveIntensity: 0.3, metalness: 0.25, roughness: 0.35 }));
+ball.position.set(R_MID, 0, 0); scene.add(ball);
+
+// 공 트레일 풀
+const TRAILN = 28, trail = [];
+const tGeo = new THREE.SphereGeometry(BALL_R * 0.62, 12, 12);
+for (let i = 0; i < TRAILN; i++) {
+  const m = new THREE.Mesh(tGeo, new THREE.MeshBasicMaterial({
+    color: 0xff5c8d, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+  m.visible = false; scene.add(m); trail.push({ mesh: m, life: 0, max: 0.4 });
+}
+let tHead = 0, tAcc = 0;
+function emitTrail(dt) {
+  tAcc += dt; if (tAcc < 0.016) return; tAcc = 0;
+  const tr = currentTrail();
+  const t = trail[tHead]; tHead = (tHead + 1) % TRAILN;
+  t.mesh.visible = true; t.mesh.position.copy(ball.position);
+  if (tr.rainbow)        t.mesh.material.color.setHSL((performance.now() * 0.0004) % 1, 0.85, 0.6);
+  else if (tr.color != null) t.mesh.material.color.setHex(tr.color);
+  else                   t.mesh.material.color.copy(ball.material.color);
+  t.baseScale = tr.width / 0.62;     // 기본 굵기 대비 배율
+  t.baseOpacity = tr.opacity;
+  t.max = tr.life; t.life = tr.life;
+}
+function updateTrail(dt) {
+  for (const t of trail) {
+    if (t.life <= 0) continue;
+    t.life -= dt;
+    if (t.life <= 0) { t.mesh.visible = false; continue; }
+    const k = t.life / t.max;
+    t.mesh.material.opacity = k * (t.baseOpacity || 0.65);
+    t.mesh.scale.setScalar(k * (t.baseScale || 1));
+  }
+}
+
+// ---- 블룸 컴포저 ----
+const composer = new THREE.EffectComposer(renderer);
+composer.addPass(new THREE.RenderPass(scene, camera));
+const bloom = new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.7, 0.5, 0.55);
+composer.addPass(bloom);
+
+// ---- 파티클(파편) 풀 ----
+const PARTN = 90;
+const particles = [];
+const pGeo = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+for (let i = 0; i < PARTN; i++) {
+  const m = new THREE.Mesh(pGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, fog: false }));
+  m.visible = false; scene.add(m);
+  particles.push({ mesh: m, vx: 0, vy: 0, vz: 0, life: 0, max: 1, spin: 0 });
+}
+let pHead = 0;
+function burst(pos, colorHex, n, power) {
+  power = power || 1;
+  for (let k = 0; k < n; k++) {
+    const p = particles[pHead]; pHead = (pHead + 1) % PARTN;
+    p.mesh.visible = true;
+    p.mesh.material.color.setHex(colorHex);
+    p.mesh.position.set(pos.x, pos.y, pos.z);
+    const ang = Math.random() * Math.PI * 2, sp = (1.5 + Math.random() * 3.5) * power;
+    p.vx = Math.cos(ang) * sp; p.vz = Math.sin(ang) * sp * 0.4;
+    p.vy = (2 + Math.random() * 5) * power;
+    p.life = p.max = 0.45 + Math.random() * 0.45;
+    p.spin = (Math.random() - 0.5) * 12;
+  }
+}
+function updateParticles(dt) {
+  for (const p of particles) {
+    if (p.life <= 0) continue;
+    p.life -= dt;
+    if (p.life <= 0) { p.mesh.visible = false; continue; }
+    p.vy -= 20 * dt;
+    p.mesh.position.x += p.vx * dt;
+    p.mesh.position.y += p.vy * dt;
+    p.mesh.position.z += p.vz * dt;
+    p.mesh.rotation.x += p.spin * dt; p.mesh.rotation.y += p.spin * dt;
+    p.mesh.scale.setScalar(Math.max(0.01, p.life / p.max));
+  }
+}
+
+const SAFE_COLORS = [0x4dd2ff, 0x7c5cff, 0x4dffa0, 0xffd84d, 0xff8f5c];
+const DANGER_COLOR = 0xff3b5c;
+
+const slotGeo = new THREE.RingGeometry(R_INNER, R_OUTER, 6, 1, 0, SLOT_ANG * 0.92);
+// 코인 발판 수집물 (빈틈 중앙에 떠 있는 골드 코인)
+const coinGeo = new THREE.SphereGeometry(0.26, 14, 14);
+const coinMat = new THREE.MeshStandardMaterial({ color: 0xffd84d, emissive: 0xffd84d, emissiveIntensity: 1.1, metalness: 0.4, roughness: 0.25 });
+class Ring {
+  constructor() {
+    this.group = new THREE.Group(); this.group.rotation.x = -Math.PI / 2;
+    this.slots = []; this.meshes = [];
+    for (let i = 0; i < N_SLOTS; i++) {
+      const m = new THREE.Mesh(slotGeo, new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, metalness: 0.4, roughness: 0.3, emissiveIntensity: 0.6 }));
+      m.rotation.z = -(i * SLOT_ANG); this.group.add(m); this.meshes.push(m);
+    }
+    this.coin = new THREE.Mesh(coinGeo, coinMat);
+    this.coin.visible = false; this.group.add(this.coin); this.hasCoin = false;
+    tower.add(this.group); this.passed = false; this.y = 0; this.depth = 0;
+  }
+  layout(depth, baseColor) {
+    this.depth = depth; this.passed = false;
+    const t = Math.min(1, Math.max(0, depth - 6) / 70);
+    const dangerRatio = THREE.MathUtils.lerp(0, P.dangerMax, t);
+    let gapSlots = depth < 10 ? 4 : (depth < 25 ? 3 : (depth < 45 ? 2 : 1));
+    const gapStart = Math.floor(Math.random() * N_SLOTS);
+    const slots = new Array(N_SLOTS).fill('safe');
+    for (let g = 0; g < gapSlots; g++) slots[(gapStart + g) % N_SLOTS] = 'gap';
+    for (let i = 0; i < N_SLOTS; i++) if (slots[i] === 'safe' && Math.random() < dangerRatio) slots[i] = 'danger';
+    this.slots = slots;
+    // 코인 발판: 일부 링의 빈틈 중앙에 코인 배치(통과 시 수집)
+    this.hasCoin = depth > 4 && Math.random() < 0.32;
+    if (this.hasCoin) {
+      const a = -(gapStart * SLOT_ANG) + SLOT_ANG * 0.5;   // 빈틈 중앙 각(슬롯 메시와 동일 기준)
+      this.coin.position.set(R_MID * Math.cos(a), R_MID * Math.sin(a), 0);
+    }
+    this.coin.visible = this.hasCoin;
+    for (let i = 0; i < N_SLOTS; i++) {
+      const m = this.meshes[i];
+      if (slots[i] === 'gap') { m.visible = false; }
+      else {
+        m.visible = true;
+        const col = slots[i] === 'danger' ? DANGER_COLOR : baseColor;
+        m.material.color.setHex(col);
+        m.material.emissive.setHex(col);
+        m.material.emissiveIntensity = 0.5;   // 모든 발판 동일한 은은한 발광(위험은 빨간 색으로만 구분)
+      }
+    }
+  }
+  setY(y) { this.y = y; this.group.position.y = y; }
+}
+
+// ---- 게임 상태 ----
+let rings = [];
+let state = 'home'; // home | playing | over
+let vy = 0, score = 0, combo = 0, depthCount = 0, lowestY = 0;
+let rageLeft = 0, lives = MAX_LIVES, hitInvuln = 0;
+let started = false, squash = 0;
+let freezeT = 0, slowT = 0, shakeAmt = 0; // 히트스톱 / 슬로모 / 카메라 흔들림
+// 런 단위
+let runMaxCombo = 0, runDepth = 0, reviveUsed = false, coinMult = 1, committed = false;
+let runBonusCoins = 0, lastCheckpoint = 0;   // 코인발판 수집분 / 마지막 체크포인트 구간
+
+// ---- DOM ----
+const $ = id => document.getElementById(id);
+const elScore = $('score'), elCombo = $('combo'), elDepth = $('depth');
+const elRage = $('rage'), elHint = $('hint'), elLives = $('lives'), elHurt = $('hurt'), elHud = $('hud');
+
+function renderLives() {
+  elLives.textContent = '❤️'.repeat(Math.max(0, lives)) + '🤍'.repeat(Math.max(0, MAX_LIVES - lives));
+}
+function flashHurt() { elHurt.classList.remove('hit'); void elHurt.offsetWidth; elHurt.classList.add('hit'); }
+function ringBaseColor(depth) { return SAFE_COLORS[Math.floor(depth / 5) % SAFE_COLORS.length]; }
+
+// ---- 화면 전환 ----
+function showScreen(name) {
+  ['home', 'over', 'shop', 'daily', 'rank'].forEach(s => $(s).classList.toggle('show', s === name));
+  if (name === 'home') flushLinkPrompt();
+  elHud.classList.toggle('show', name === null);
+  elHint.classList.toggle('show', name === null && !started);
+  $('panel').classList.toggle('hide', name !== null);
+}
+
+function setupTower() {
+  if (rings.length === 0) for (let i = 0; i < ACTIVE_RINGS; i++) rings.push(new Ring());
+  depthCount = 0; lowestY = 0;
+  for (let i = 0; i < rings.length; i++) {
+    const y = -i * P.ringSpacing;
+    rings[i].setY(y); rings[i].layout(i, ringBaseColor(i));
+    lowestY = y; depthCount = i;
+  }
+  tower.rotation.y = 0;
+  ball.position.set(R_MID, 3.5, 0);
+  ball.visible = true;
+}
+
+let shieldReady = false, runBooster = false;
+function startGame() {
+  setupTower();
+  vy = 0; score = 0; combo = 0; rageLeft = 0;
+  lives = MAX_LIVES; hitInvuln = 0;
+  runMaxCombo = 0; runDepth = 0; reviveUsed = false; coinMult = 1; committed = false;
+  runBonusCoins = 0; lastCheckpoint = 0;
+  shieldReady = SAVE.items.shield > 0;           // 이번 판 시작 보호막 준비
+  runBooster = SAVE.boosterRuns > 0;             // 이번 판 코인 부스터 적용 여부
+  if (runBooster) { SAVE.boosterRuns--; save(); }
+  started = false; setRage(false);
+  state = 'playing';
+  showScreen(null);
+  updateHUD(); renderLives();
+  logEv('game_start', { games: SAVE.stats.games || 0 });
+}
+
+function updateHUD() {
+  elScore.textContent = score;
+  elDepth.textContent = 'DEPTH ' + runDepth;
+  if (rageLeft > 0) { elCombo.textContent = '🔥 무적! ' + rageLeft; elCombo.classList.add('show', 'rage'); }
+  else if (combo >= 2) { elCombo.textContent = combo + ' COMBO'; elCombo.classList.add('show'); elCombo.classList.remove('rage'); }
+  else elCombo.classList.remove('show', 'rage');
+}
+
+function nextRing() {
+  let b = null;
+  for (const r of rings) if (!r.passed && r.y < ball.position.y) if (!b || r.y > b.y) b = r;
+  return b;
+}
+function ballLocalSlot() {
+  let a = (tower.rotation.y) % (Math.PI * 2); if (a < 0) a += Math.PI * 2;
+  return Math.floor(a / SLOT_ANG) % N_SLOTS;
+}
+
+// 판정: 공 중심이 속한 슬롯. 단 경계에선 인접 빈틈을 약간 관대하게 인정(억울한 피격 방지)
+function judgeSlot(r) {
+  let a = (tower.rotation.y) % (Math.PI * 2); if (a < 0) a += Math.PI * 2;
+  const fa = a / SLOT_ANG;
+  const idx = Math.floor(fa) % N_SLOTS;
+  const frac = fa - Math.floor(fa);                  // 0..1 (슬롯 내 위치)
+  if (r.slots[idx] === 'gap') return { type: 'gap', idx };
+  const EDGE = 0.28;                                  // 가장자리 관대 폭
+  if (frac < EDGE)          { const n = (idx - 1 + N_SLOTS) % N_SLOTS; if (r.slots[n] === 'gap') return { type: 'gap', idx: n }; }
+  else if (frac > 1 - EDGE) { const n = (idx + 1) % N_SLOTS;          if (r.slots[n] === 'gap') return { type: 'gap', idx: n }; }
+  return { type: r.slots[idx], idx };
+}
+
+// 밟은 발판 깨짐: 해당 슬롯 메시 제거 + 파편 분출
+function breakSlot(r, idx) {
+  const m = r.meshes[idx];
+  if (m && m.visible) m.visible = false;
+  burst(ball.position, DANGER_COLOR, 14, 1.5);
+}
+
+// 조준 하이라이트: 공이 통과/충돌할 슬롯을 밝혀 "무엇을 밟을지" 즉시 보이게
+let hlMesh = null;
+function updateAim() {
+  if (hlMesh) { hlMesh.material.emissiveIntensity = 0.5; hlMesh = null; }
+  if (state !== 'playing' || rageLeft > 0) return;
+  const r = nextRing();
+  if (!r) return;
+  const j = judgeSlot(r);
+  if (j.type === 'gap') return;                       // 빈틈 통과 예정 → 강조 없음(= 안전 신호)
+  const m = r.meshes[j.idx];
+  if (m && m.visible) { m.material.emissiveIntensity = (j.type === 'danger') ? 1.9 : 1.2; hlMesh = m; }
+}
+function setRage(on) {
+  const sk = currentSkin();
+  ball.material.color.setHex(on ? 0xffffff : sk.color);
+  ball.material.emissive.setHex(on ? 0xffffff : sk.color);   // 스킨 색으로 발광(블룸)
+  ball.material.emissiveIntensity = on ? 1.6 : 0.3;   // 평상시 0.3: 본체 스킨 색이 조명으로 드러나게(블룸 화이트아웃 방지)
+  point.color.setHex(on ? 0xff5c8d : sk.color);
+  point.intensity = on ? 2.6 : 0.0;
+  elRage.classList.toggle('on', on);
+  if (on) { SFX.rage(); shakeAmt = 0.5; burst(ball.position, 0xffd84d, 18, 1.5); toast('🔥 무적! 발판을 뚫고 강하!');
+            if (SAVE.stats) SAVE.stats.rages = (SAVE.stats.rages || 0) + 1; }
+}
+function recycleRings() {
+  for (const r of rings) if (r.y > ball.position.y + P.ringSpacing * 3.5) {
+    lowestY -= P.ringSpacing; depthCount++;
+    r.setY(lowestY); r.layout(depthCount, ringBaseColor(depthCount));
+  }
+}
+function onPass() {
+  runDepth++;
+  const seg = Math.floor(runDepth / 25);
+  if (seg > lastCheckpoint) { lastCheckpoint = seg; checkpoint(seg); }
+}
+function checkpoint(seg) {
+  score += 25;                         // 점수 보너스(코인 아님 — 경제 보호)
+  slowT = 0.45; shakeAmt = 0.4;
+  burst(ball.position, 0xffd84d, 24, 2.0);
+  SFX.rage();
+  toast('🏁 구간 ' + seg + ' 돌파! +25점');
+  popup('🏁 구간 ' + seg, 'big');
+}
+// 점수/콤보 플로팅 팝업 (공 위치를 화면 좌표로 투영)
+function popup(text, cls) {
+  if (state !== 'playing') return;
+  const v = ball.position.clone().project(camera);
+  const el = document.createElement('div');
+  el.className = 'popup' + (cls ? ' ' + cls : '');
+  el.textContent = text;
+  el.style.left = ((v.x * 0.5 + 0.5) * innerWidth) + 'px';
+  el.style.top = ((-v.y * 0.5 + 0.5) * innerHeight) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 800);
+}
+
+// 코인 획득량: 점수와 분리(콤보 인플레 방지) — 깊이 기반 + 코인발판 수집분
+function calcEarned() { return Math.max(2, Math.floor(runDepth * 0.7)) + runBonusCoins; }
+
+// 실지급 코인 = 기본량 × 광고배율(mult) × 부스터 × Remote Config 이벤트 배율.
+// 게임오버 화면 표시와 commitRun 지급이 같은 식을 쓰도록 여기로 모았다.
+function earnedCoins(mult) {
+  return Math.round(calcEarned() * mult * (runBooster ? 2 : 1) * RC.coinMult);
+}
+
+function gameOver() {
+  state = 'over';
+  hitInvuln = 0; ball.visible = true; setRage(false);
+  squash = 0.2;
+  SFX.dead(); burst(ball.position, currentSkin().color, 26, 2.2); slowT = 0.5; shakeAmt = 0.6;
+  const earned = earnedCoins(1);
+  if (score > SAVE.best) {
+    if (SAVE.best > 0 && SAVE.stats.games >= 5) queueLinkPrompt('best');   // 첫 판들은 제외
+    SAVE.best = score;
+  }
+  $('finalScore').textContent = score;
+  $('bestScore').textContent = 'BEST ' + SAVE.best;
+  $('earnCoins').textContent = '+' + earned + ' 🪙';
+  $('reviveBtn').style.display = reviveUsed ? 'none' : '';
+  const rv = SAVE.items.revive || 0;
+  $('reviveItemBtn').style.display = (rv > 0 && !reviveUsed) ? '' : 'none';
+  $('reviveItemBtn').textContent = '🎟️ 부활권 사용 (' + rv + ')';
+  $('doubleBtn').disabled = false;
+  coinMult = 1;
+  logEv('game_over', { score: score, depth: runDepth, combo_max: runMaxCombo });
+  setTimeout(() => { if (state === 'over') showScreen('over'); }, 450); // 사망 연출 잠깐 보여주고
+}
+
+// 런 정산 (코인·미션·best) — 다시하기/홈 누를 때 1회
+function commitRun() {
+  if (committed) return; committed = true;
+  const earned = earnedCoins(coinMult);   // 광고 2배 · 부스터 · 이벤트 배율 포함
+  SAVE.coins += earned;
+  if (earned > 0) SFX.coin();
+  if (score > SAVE.best) SAVE.best = score;
+  if (score > SAVE.season.best) SAVE.season.best = score;
+  checkSeasonSkin();               // 시즌 목표 달성 시 한정 스킨 해금
+  submitScoreNative();             // 랭킹 서버에 최고 점수 제출(네이티브 전용)
+  // 미션 진행
+  const pr = SAVE.missions.prog;
+  pr.combo = Math.max(pr.combo, runMaxCombo);
+  pr.depth = Math.max(pr.depth, runDepth);
+  pr.coins += earned;
+  // 주간 진행
+  const wp = SAVE.weekly.prog;
+  wp.games += 1; wp.depth = Math.max(wp.depth, runDepth); wp.coins += earned;
+  // 평생 통계(업적용)
+  const st = SAVE.stats;
+  st.games += 1; st.bestDepth = Math.max(st.bestDepth, runDepth);
+  st.bestCombo = Math.max(st.bestCombo, runMaxCombo); st.coinsTotal += earned;
+  SAVE.runsSinceAd = (SAVE.runsSinceAd || 0) + 1;   // 전면광고 빈도 판단용
+  save();
+  refreshMeta();
+}
+
+function revive() {
+  // reviveUsed는 **성공했을 때만** 세운다 — 중도 종료했는데 부활권을 쓴 것으로
+  // 처리되면 다시 시도할 수 없다.
+  showAdGuarded(() => {
+    reviveUsed = true;
+    lives = 1; renderLives(); hitInvuln = 2.0;
+    vy = P.bounce; ball.visible = true;
+    state = 'playing'; showScreen(null);
+    logEv('revive', { source: 'ad' });
+  }, () => toast('광고를 끝까지 봐야 부활할 수 있어요'));
+}
+function reviveWithItem() {
+  if ((SAVE.items.revive || 0) <= 0) return;
+  SAVE.items.revive--; save(); reviveUsed = true;
+  lives = 1; renderLives(); hitInvuln = 2.0;
+  vy = P.bounce; ball.visible = true;
+  state = 'playing'; showScreen(null);
+  toast('🎟️ 부활권 사용!');
+  logEv('revive', { source: 'item' });
+}
+
+// ---- 입력 ----
+let dragging = false, lastX = 0;
+function onDown(x) { audioInit(); dragging = true; lastX = x; if (state === 'playing' && !started) { started = true; elHint.classList.remove('show'); } }
+function onMove(x) { if (!dragging || state !== 'playing') return; const dx = x - lastX; lastX = x; tower.rotation.y += dx * P.rotateSpeed; }
+function onUp() { dragging = false; }
+renderer.domElement.addEventListener('pointerdown', e => onDown(e.clientX));
+window.addEventListener('pointermove', e => onMove(e.clientX));
+window.addEventListener('pointerup', onUp);
+
+// ---- 물리 ----
+// 무적 강하: 링의 보이는 발판을 모두 부수고 원형 파편 분출
+function smashRing(r) {
+  for (let i = 0; i < N_SLOTS; i++) {
+    if (r.slots[i] === 'gap') continue;
+    if (r.meshes[i].visible) r.meshes[i].visible = false;
+  }
+  const base = ringBaseColor(r.depth);
+  for (let k = 0; k < 16; k++) {
+    const a = (k / 16) * Math.PI * 2;
+    burst({ x: Math.cos(a) * R_MID, y: r.y, z: Math.sin(a) * R_MID }, base, 2, 1.5);
+  }
+}
+
+function physics(dt) {
+  if (state !== 'playing') return;
+  if (hitInvuln > 0) hitInvuln = Math.max(0, hitInvuln - dt);
+  const grav = P.gravity * (1 + Math.min(runDepth / 250, 0.5));   // 깊이에 따라 낙하 가속(최대 +50%)
+  vy -= grav * dt;
+  ball.position.y += vy * dt;
+  const r = nextRing();
+  if (r && vy < 0 && ball.position.y - BALL_R <= r.y) {
+    if (rageLeft > 0) {
+      // 무적: 발판 종류 무관하게 링 전체를 부수며 강하
+      smashRing(r);
+      r.passed = true; onPass();
+      score += 3; rageLeft--;
+      if (vy > -18) vy = -18;               // 멈추지 않고 빠르게 관통 강하
+      squash = 0.18; freezeT = 0.025; shakeAmt = 0.5;
+      SFX.rageHit();
+      if (rageLeft === 0) setRage(false);
+      updateHUD();
+    } else {
+      const j = judgeSlot(r);
+      const slot = j.type;
+      if (slot === 'gap') {
+        r.passed = true; onPass();
+        combo++; runMaxCombo = Math.max(runMaxCombo, combo);
+        const gain = 1 + Math.floor(combo / 3);
+        score += gain;
+        SFX.pass(combo); burst(ball.position, currentSkin().color, 5, 0.9);
+        popup('+' + gain + (combo >= 3 ? '  x' + combo : ''), combo >= 5 ? 'big' : '');
+        if (r.hasCoin) {                       // 코인 발판 수집
+          r.hasCoin = false; r.coin.visible = false;
+          runBonusCoins += 2;
+          burst(ball.position, 0xffd84d, 10, 1.2); SFX.coin();
+          popup('+2 🪙', 'gold');
+        }
+        if (combo >= RAGE_COMBO) { rageLeft = RAGE_RINGS; combo = 0; setRage(true); }
+        updateHUD();
+      } else if (slot === 'danger') {
+        if (hitInvuln > 0) { r.passed = true; onPass(); }
+        else if (shieldReady && SAVE.items.shield > 0) {   // 시작 보호막: 첫 피격 무효
+          SAVE.items.shield--; shieldReady = false; save();
+          breakSlot(r, j.idx); r.passed = true; onPass();
+          hitInvuln = HIT_INVULN; squash = 0.18; shakeAmt = 0.4;
+          SFX.bounce(); toast('🛡️ 보호막이 막았다!'); updateHUD();
+        }
+        else {
+          breakSlot(r, j.idx);            // 밟은 빨간 발판 깨짐 연출
+          lives--; combo = 0; renderLives(); flashHurt();
+          SFX.hit(); burst(ball.position, DANGER_COLOR, 18, 1.6); freezeT = 0.08; shakeAmt = 0.6;
+          if (lives <= 0) gameOver();
+          else { hitInvuln = HIT_INVULN; r.passed = true; onPass(); squash = 0.18; updateHUD(); }
+        }
+      } else {
+        ball.position.y = r.y + BALL_R; vy = P.bounce; combo = 0; squash = 0.18; SFX.bounce(); updateHUD();
+      }
+    }
+  }
+  recycleRings();
+  if (ball.position.y < lowestY - 5) gameOver();
+}
+
+// ---- 렌더 루프 ----
+let prev = performance.now(), acc = 0; const FIXED = 1 / 120;
+function animate(now) {
+  requestAnimationFrame(animate);
+  let realDt = (now - prev) / 1000; prev = now; realDt = Math.min(realDt, 0.033);
+
+  // 히트스톱(정지) / 슬로모(감속) → 시뮬레이션 dt 산출
+  let simDt;
+  if (freezeT > 0) { freezeT = Math.max(0, freezeT - realDt); simDt = 0; }
+  else { const ts = slowT > 0 ? 0.35 : 1; simDt = realDt * ts; if (slowT > 0) slowT = Math.max(0, slowT - realDt); }
+
+  acc += simDt; while (acc >= FIXED) { physics(FIXED); acc -= FIXED; }
+  updateParticles(simDt);
+  updateTrail(simDt);
+  if (state === 'playing' && started) emitTrail(simDt);
+  for (const r of rings) if (r.coin.visible) r.coin.rotation.y += simDt * 3.2;   // 코인 반짝 회전
+
+  // 오로라 일렁임 + 하늘/별이 카메라를 따라다님(무한 우주)
+  skyMat.uniforms.t.value = now * 0.0006;
+  sky.position.y = ball.position.y;
+  stars.position.y = ball.position.y;
+  stars.rotation.y = now * 0.00002;
+
+  // 카메라 추적 + 흔들림(주스)
+  if (shakeAmt > 0) shakeAmt = Math.max(0, shakeAmt - realDt * 2.5);
+  const sx = (Math.random() - 0.5) * shakeAmt, sy = (Math.random() - 0.5) * shakeAmt;
+  camera.position.set(sx, ball.position.y + 5.5 + sy, 9.5);
+  camera.lookAt(0, ball.position.y - 2.5, 0);
+  point.position.set(ball.position.x, ball.position.y, ball.position.z);
+
+  // 무적 시 FOV 확장 → 질주감
+  const targetFov = rageLeft > 0 ? 72 : 60;
+  if (Math.abs(camera.fov - targetFov) > 0.1) { camera.fov += (targetFov - camera.fov) * 0.15; camera.updateProjectionMatrix(); }
+
+  // 공 스쿼시&스트레치
+  if (squash > 0) squash = Math.max(0, squash - realDt);
+  const sq = 1 - Math.sin((squash / 0.18) * Math.PI) * 0.35;
+  ball.scale.set(1 / sq, sq, 1 / sq);
+  const stretch = THREE.MathUtils.clamp(Math.abs(vy) / 40, 0, 0.3);
+  ball.scale.y *= (1 + (vy < 0 ? stretch : stretch * 0.5));
+
+  if (rageLeft > 0) point.intensity = 2.0 * (1 + Math.sin(now * 0.02) * 0.15);
+  else if (currentSkin().rainbow) ball.material.color.setHSL((now * 0.0002) % 1, 0.85, 0.6);
+
+  ball.visible = !(state === 'playing' && hitInvuln > 0 && Math.floor(now / 70) % 2 === 0);
+  updateAim();
+  composer.render();
+}
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  composer.setSize(innerWidth, innerHeight);
+  bloom.setSize(innerWidth, innerHeight);
+});
+
+// ---- 사운드 (Web Audio 합성 — 외부 음원 0, 저작권 0) ----
+let actx = null, soundOn = true;
+function audioInit() {
+  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (actx && actx.state === 'suspended') actx.resume();
+}
+function tone(freq, dur, type, vol, slideTo) {
+  if (!actx || !soundOn) return;
+  const t = actx.currentTime, o = actx.createOscillator(), g = actx.createGain();
+  o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t);
+  if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+  g.gain.setValueAtTime(vol || 0.18, t);
+  g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+  o.connect(g).connect(actx.destination); o.start(t); o.stop(t + dur);
+}
+function noiseBurst(dur, vol, cutoff) {
+  if (!actx || !soundOn) return;
+  const t = actx.currentTime, n = Math.floor(actx.sampleRate * dur);
+  const b = actx.createBuffer(1, n, actx.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+  const s = actx.createBufferSource(); s.buffer = b;
+  const f = actx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = cutoff || 1000;
+  const g = actx.createGain(); g.gain.setValueAtTime(vol || 0.25, t);
+  g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+  s.connect(f).connect(g).connect(actx.destination); s.start(t);
+}
+const SFX = {
+  pass: c => tone(440 + Math.min(c || 0, 12) * 42, 0.09, 'triangle', 0.15),
+  bounce: () => tone(190, 0.1, 'sine', 0.16, 120),
+  rage: () => tone(330, 0.3, 'sawtooth', 0.13, 900),
+  rageHit: () => { noiseBurst(0.12, 0.28, 1800); tone(160, 0.12, 'square', 0.1); },
+  hit: () => { noiseBurst(0.18, 0.34, 700); tone(120, 0.18, 'square', 0.15, 70); },
+  dead: () => tone(420, 0.5, 'sawtooth', 0.2, 80),
+  coin: () => { tone(880, 0.07, 'square', 0.12); setTimeout(() => tone(1320, 0.1, 'square', 0.12), 55); },
+  ui: () => tone(620, 0.05, 'triangle', 0.1),
+};
+
+// ============================================================
+//  메타 UI
+// ============================================================
+let toastT = 0;
+function toast(msg) {
+  const el = $('toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 1600);
+}
+
+// 광고 목업 (3초 카운트 후 콜백)
+let adTimer = 0;
+function showAd(cb) {
+  const m = $('admodal'), c = $('adcnt'); let n = 3; c.textContent = n;
+  m.classList.add('show');
+  clearInterval(adTimer);
+  adTimer = setInterval(() => {
+    n--; c.textContent = n;
+    if (n <= 0) { clearInterval(adTimer); m.classList.remove('show'); cb && cb(); }
+  }, 700);
+}
+
+function refreshMeta() {
+  const c = SAVE.coins;
+  $('homeCoins').textContent = '🪙 ' + c;
+  const hn = $('homeNick'); if (hn) hn.textContent = (acctLinked() ? '🔗 ' : _cloudOn ? '☁️ ' : '👤 ') + (SAVE.nickname || 'Player');
+  $('shopCoins').textContent = '🪙 ' + c;
+  $('dailyCoins').textContent = '🪙 ' + c;
+  $('homeBest').textContent = 'BEST ' + SAVE.best;
+  // 데일리 뱃지: 받을 수 있는 출석/일일/주간/업적 보상 수
+  const canDaily = SAVE.daily.last !== todayStr();
+  const claimable = SAVE.missions.defs.filter((m, i) => missionDone(i) && !m.claimed).length
+    + SAVE.weekly.defs.filter((m, i) => weeklyDone(i) && !m.claimed).length
+    + ACHIEVEMENTS.filter(a => achvVal(a) >= a.target && !SAVE.achvClaimed[a.id]).length;
+  const n = (canDaily ? 1 : 0) + claimable;
+  $('dailyBadge').textContent = n > 0 ? n : '';
+  $('dailyBadge').style.display = n > 0 ? '' : 'none';
+}
+
+// ----- 상점 -----
+let shopCat = 'skin';
+function priceTag(price) {
+  return SAVE.coins >= price ? '<div class="st buy">🪙 ' + price + '</div>'
+                            : '<div class="st lock">🔒 ' + price + '</div>';
+}
+// '공' 탭 목록 = 기본 스킨 + 이번 시즌 한정 스킨 + 이미 획득한 지난 시즌 스킨.
+// (지난 시즌 미획득 스킨은 노출하지 않는다 — 획득 경로가 없으므로)
+function shopSkinList() {
+  const cur = seasonSkin();
+  const past = SEASON_SKINS.filter(s => s.id !== cur.id && SAVE.ownedSkins.includes(s.id));
+  return RC.seasonEnabled ? SKINS.concat([cur], past) : SKINS.concat(past);
+}
+function renderShop() {
+  const g = $('skinGrid'); g.innerHTML = '';
+  const cat = { skin: shopSkinList(), trail: TRAILS, theme: THEMES, item: CONSUMABLES }[shopCat];
+  const builder = { skin: skinCard, trail: trailCard, theme: themeCard, item: itemCard }[shopCat];
+  cat.forEach(x => g.appendChild(builder(x)));
+}
+function skinCard(sk) {
+  const owned = SAVE.ownedSkins.includes(sk.id), eq = SAVE.equipped === sk.id;
+  const card = document.createElement('div');
+  card.className = 'skin' + (eq ? ' equipped' : '');
+  const st = eq ? '<div class="st eq">장착 중</div>'
+           : owned ? '<div class="st own">장착하기</div>'
+           // 시즌 스킨은 구매 불가 → 가격 대신 시즌 최고점 진행도를 보여준다
+           : sk.season ? '<div class="st lock">🏅 ' + Math.min(SAVE.season.best, RC.seasonGoal) + '/' + RC.seasonGoal + '</div>'
+           : priceTag(sk.price);
+  const grad = sk.rainbow ? 'background:conic-gradient(red,orange,yellow,lime,cyan,blue,violet,red)' : 'background:' + hexStr(sk.color);
+  card.innerHTML = '<div class="ball" style="' + grad + '"></div><div class="nm">' + (sk.season ? '🏅 ' : '') + sk.name + '</div>' + st;
+  card.onclick = () => onSkinTap(sk);
+  return card;
+}
+function trailCard(tr) {
+  const owned = SAVE.ownedTrails.includes(tr.id), eq = SAVE.equippedTrail === tr.id;
+  const card = document.createElement('div');
+  card.className = 'skin' + (eq ? ' equipped' : '');
+  const st = eq ? '<div class="st eq">장착 중</div>' : owned ? '<div class="st own">장착하기</div>' : priceTag(tr.price);
+  const col = tr.rainbow ? 'linear-gradient(90deg,red,orange,yellow,lime,cyan,violet)'
+            : tr.color != null ? hexStr(tr.color) : 'linear-gradient(90deg,#ff5c8d,rgba(255,92,141,0))';
+  const prev = '<div class="ball" style="height:18px;width:84%;border-radius:9px;margin:8px auto 10px;background:' + col + '"></div>';
+  card.innerHTML = prev + '<div class="nm">' + tr.name + '</div>' + st;
+  card.onclick = () => onBuyEquip('trail', tr);
+  return card;
+}
+function themeCard(th) {
+  const owned = SAVE.ownedThemes.includes(th.id), eq = SAVE.equippedTheme === th.id;
+  const card = document.createElement('div');
+  card.className = 'skin' + (eq ? ' equipped' : '');
+  const st = eq ? '<div class="st eq">장착 중</div>' : owned ? '<div class="st own">장착하기</div>' : priceTag(th.price);
+  const col = 'linear-gradient(180deg,' + hexStr(th.top) + ',' + hexStr(th.mid) + ',' + hexStr(th.bot) + ')';
+  const prev = '<div class="ball" style="border-radius:12px;background:' + col + '"></div>';
+  card.innerHTML = prev + '<div class="nm">' + th.name + '</div>' + st;
+  card.onclick = () => onBuyEquip('theme', th);
+  return card;
+}
+function itemCard(it) {
+  const card = document.createElement('div');
+  card.className = 'skin';
+  const have = it.id === 'booster' ? SAVE.boosterRuns + '판' : (SAVE.items[it.id] || 0) + '개';
+  card.innerHTML = '<div class="ball" style="background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:26px">' + it.icon + '</div>'
+    + '<div class="nm">' + it.name + '</div>'
+    + '<div class="pct" style="font-size:11px;margin:3px 0 4px">' + it.desc + '</div>'
+    + '<div class="st own">보유 ' + have + '</div>' + priceTag(it.price);
+  card.onclick = () => onBuyItem(it);
+  return card;
+}
+function onSkinTap(sk) {
+  if (SAVE.ownedSkins.includes(sk.id)) {
+    SAVE.equipped = sk.id; save(); setRage(false); renderShop(); toast(sk.name + ' 장착!');
+  } else if (sk.season) {
+    toast('시즌 ' + RC.seasonGoal + '점 달성 시 해금 (현재 ' + SAVE.season.best + ')');
+  } else if (SAVE.coins >= sk.price) {
+    SAVE.coins -= sk.price; SAVE.ownedSkins.push(sk.id); SAVE.equipped = sk.id;
+    save(); setRage(false); renderShop(); refreshMeta(); toast(sk.name + ' 구매 & 장착!');
+    logEv('shop_buy', { item: sk.id, kind: 'skin', price: sk.price });
+    queueLinkPrompt('shop');
+  } else { toast('코인이 부족해요 (🪙 ' + sk.price + ')'); }
+}
+function onBuyEquip(kind, it) {
+  const ownedArr = kind === 'trail' ? SAVE.ownedTrails : SAVE.ownedThemes;
+  const setEq = id => { if (kind === 'trail') SAVE.equippedTrail = id; else SAVE.equippedTheme = id; };
+  if (ownedArr.includes(it.id)) {
+    setEq(it.id); save(); if (kind === 'theme') applyTheme(); renderShop(); toast(it.name + ' 장착!');
+  } else if (SAVE.coins >= it.price) {
+    SAVE.coins -= it.price; ownedArr.push(it.id); setEq(it.id); save();
+    if (kind === 'theme') applyTheme(); renderShop(); refreshMeta(); toast(it.name + ' 구매 & 장착!');
+    logEv('shop_buy', { item: it.id, kind: kind, price: it.price });
+    queueLinkPrompt('shop');
+  } else { toast('코인이 부족해요 (🪙 ' + it.price + ')'); }
+}
+function onBuyItem(it) {
+  if (SAVE.coins < it.price) { toast('코인이 부족해요 (🪙 ' + it.price + ')'); return; }
+  SAVE.coins -= it.price;
+  if (it.id === 'booster') SAVE.boosterRuns += 3;
+  else SAVE.items[it.id] = (SAVE.items[it.id] || 0) + 1;
+  save(); renderShop(); refreshMeta();
+  toast(it.name + ' 구매!');
+  logEv('shop_buy', { item: it.id, kind: 'item', price: it.price });
+  queueLinkPrompt('shop');
+}
+
+// ----- 미션 (일일 / 주간 / 업적) -----
+const MLABELS = { combo: '한 판 콤보', depth: '깊이 도달', coins: '코인 모으기', games: '플레이 횟수' };
+function missionDone(i) { const m = SAVE.missions.defs[i], pr = SAVE.missions.prog; return pr[m.type] >= m.target; }
+function weeklyDone(i) { const m = SAVE.weekly.defs[i], pr = SAVE.weekly.prog; return pr[m.type] >= m.target; }
+function achvVal(a) { return a.stat === 'skins' ? SAVE.ownedSkins.length : (SAVE.stats[a.stat] || 0); }
+
+function missionRow(title, cur, target, claimed, rewardLabel, claimable, onClaim) {
+  const pct = Math.round(Math.min(cur, target) / target * 100);
+  const row = document.createElement('div'); row.className = 'mission';
+  row.innerHTML =
+    '<div class="info"><div class="mt">' + title + '</div>' +
+    '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
+    '<div class="pct">' + Math.min(cur, target) + ' / ' + target + '</div></div>' +
+    '<div class="act"></div>';
+  const act = row.querySelector('.act');
+  if (claimed) act.innerHTML = '<span class="reward">완료 ✓</span>';
+  else if (claimable) { const b = document.createElement('button'); b.className = 'miniBtn'; b.textContent = rewardLabel + ' 받기'; b.onclick = onClaim; act.appendChild(b); }
+  else act.innerHTML = '<span class="reward">' + rewardLabel + '</span>';
+  return row;
+}
+function renderMissions() {
+  const list = $('missionList'); list.innerHTML = '';
+
+  list.insertAdjacentHTML('beforeend', '<div class="msec">오늘의 미션<span class="sub">매일 초기화</span></div>');
+  SAVE.missions.defs.forEach((m, i) => list.appendChild(missionRow(
+    MLABELS[m.type] + ' ' + m.target, SAVE.missions.prog[m.type], m.target, m.claimed, '+' + m.reward + ' 🪙', missionDone(i) && !m.claimed,
+    () => { if (missionDone(i) && !m.claimed) { m.claimed = true; SAVE.coins += m.reward; save(); renderMissions(); refreshMeta(); SFX.coin(); toast('+' + m.reward + ' 🪙 획득!'); logEv('mission_claim', { type: 'daily' }); askNotifPermissionOnce(); } })));
+
+  list.insertAdjacentHTML('beforeend', '<div class="msec">주간 미션<span class="sub">매주 초기화</span></div>');
+  SAVE.weekly.defs.forEach((m, i) => list.appendChild(missionRow(
+    MLABELS[m.type] + ' ' + m.target, SAVE.weekly.prog[m.type], m.target, m.claimed, '+' + m.reward + ' 🪙', weeklyDone(i) && !m.claimed,
+    () => { if (weeklyDone(i) && !m.claimed) { m.claimed = true; SAVE.coins += m.reward; save(); renderMissions(); refreshMeta(); SFX.coin(); toast('+' + m.reward + ' 🪙 획득!'); logEv('mission_claim', { type: 'weekly' }); askNotifPermissionOnce(); } })));
+
+  list.insertAdjacentHTML('beforeend', '<div class="msec">업적<span class="sub">평생 1회</span></div>');
+  ACHIEVEMENTS.forEach(a => list.appendChild(missionRow(
+    a.name, achvVal(a), a.target, !!SAVE.achvClaimed[a.id], '+' + a.reward.coin + ' 🪙', achvVal(a) >= a.target && !SAVE.achvClaimed[a.id],
+    () => { if (achvVal(a) >= a.target && !SAVE.achvClaimed[a.id]) { SAVE.achvClaimed[a.id] = true; SAVE.coins += a.reward.coin; save(); renderMissions(); refreshMeta(); SFX.coin(); toast('🏆 ' + a.name + '! +' + a.reward.coin + '🪙'); logEv('mission_claim', { type: 'achv', id: a.id }); askNotifPermissionOnce(); } })));
+}
+
+// ----- 보상 헬퍼 -----
+function itemDef(id) { return CONSUMABLES.find(c => c.id === id) || { icon: '🎁', name: id }; }
+function applyReward(rw) {
+  if (rw.coin) SAVE.coins += rw.coin;
+  if (rw.item) SAVE.items[rw.item] = (SAVE.items[rw.item] || 0) + 1;
+}
+function rewardText(rw) {
+  const p = [];
+  if (rw.coin) p.push('+' + rw.coin + '🪙');
+  if (rw.item) p.push(itemDef(rw.item).icon + ' ' + itemDef(rw.item).name);
+  return p.join(' ');
+}
+function rewardIcon(rw) { return rw.item ? itemDef(rw.item).icon : '🪙'; }
+function rewardShort(rw) {
+  if (rw.item) return itemDef(rw.item).name;
+  return '' + rw.coin;
+}
+
+// ----- 데일리 출석 -----
+function renderDaily() {
+  const canClaim = SAVE.daily.last !== todayStr();
+  const streak = SAVE.daily.streak, todayIdx = streak % 7;
+  $('dailyStreak').textContent = '🔥 연속 출석 ' + streak + '일';
+  const grid = $('dayGrid'); grid.innerHTML = '';
+  for (let i = 0; i < 7; i++) {
+    const rw = DAILY_REWARDS[i];
+    const claimed = i < todayIdx, isToday = (i === todayIdx);
+    const cell = document.createElement('div');
+    cell.className = 'daycell' + (claimed ? ' done' : '') + (isToday && canClaim ? ' today' : '');
+    cell.innerHTML = '<div class="dl">' + (i + 1) + '일</div><div class="di">' + rewardIcon(rw) + '</div><div class="dv">' + rewardShort(rw) + '</div>' + (claimed ? '<div class="dc">✓</div>' : '');
+    grid.appendChild(cell);
+  }
+  $('claimDaily').disabled = !canClaim;
+  $('claimDaily').textContent = canClaim ? (todayIdx + 1) + '일차 보상 받기' : '오늘 받음 ✓';
+  renderMissions();
+}
+$('claimDaily').onclick = () => {
+  if (SAVE.daily.last === todayStr()) return;
+  if (SAVE.daily.last !== yesterdayStr()) SAVE.daily.streak = 0;   // 연속 끊김 → 리셋
+  const rw = DAILY_REWARDS[SAVE.daily.streak % 7];
+  applyReward(rw);
+  SAVE.daily.streak += 1; SAVE.daily.last = todayStr();
+  save(); renderDaily(); refreshMeta(); SFX.coin(); toast(rewardText(rw) + ' 출석 완료!');
+  logEv('daily_claim', { day: SAVE.daily.streak });
+  askNotifPermissionOnce();   // 보상을 막 받은 지금이 알림 권한 요청 적기
+};
+
+// ----- 랭킹 -----
+const BOTS = [['Aiden',1820],['Yuki',1450],['Min-jun',1190],['Leo',940],['Sara',760],['Tom',610],['Kai',470],['Noa',330],['Eli',210],['Pat',120]];
+function tierOf(s) {
+  if (s >= 1500) return ['💎 DIAMOND', '#7cf0ff'];
+  if (s >= 1000) return ['🟣 PLATINUM', '#c08cff'];
+  if (s >= 600)  return ['🥇 GOLD', '#ffd84d'];
+  if (s >= 300)  return ['🥈 SILVER', '#cfd6e6'];
+  return ['🥉 BRONZE', '#d8956b'];
+}
+// 네이티브 브리지 헬퍼
+function nativeBridge() { return window.flutter_inappwebview && window.flutter_inappwebview.callHandler; }
+
+// ───────────── 지표 (Firebase Analytics) ─────────────
+// 이름·파라미터 검증은 Dart(AnalyticsService)가 한다. 브라우저에서는 no-op.
+function logEv(name, params) {
+  if (!nativeBridge()) return;
+  try { window.flutter_inappwebview.callHandler('logEvent', name, params || {}); } catch (e) {}
+}
+
+// 알림 권한은 앱 시작이 아니라 **첫 보상 수령 직후**에 한 번만 요청한다.
+// (시작 시 ATT와 연달아 뜨면 양쪽 승인률이 같이 떨어진다 — 제품화설계 2.4)
+function askNotifPermissionOnce() {
+  if (SAVE.notifAsked || !nativeBridge()) return;
+  SAVE.notifAsked = true; save();
+  try { window.flutter_inappwebview.callHandler('requestNotificationPermission'); } catch (e) {}
+}
+
+// ───────────── 전면광고 빈도 정책 (심화설계 4.3) ─────────────
+// 판수 기반 판단은 세이브를 쥔 웹이 하고, 네이티브(AdManager)는 시간 간격을
+// 백스톱으로 한 번 더 건다.
+function shouldShowInterstitial() {
+  if (!nativeBridge() || !window.showInterstitialNative) return false;
+  // 첫 N판은 무조건 광고 없음 — 첫인상 보호(D1 리텐션 직결)
+  if ((SAVE.stats.games || 0) <= RC.firstRunsNoAds) return false;
+  return (SAVE.runsSinceAd || 0) >= RC.interstitialEveryRuns;
+}
+
+// 광고가 화면을 덮고 있는 동안 true. 이때의 백그라운드 전환은 "이탈"이 아니므로
+// onHidden()이 정산하지 않도록 막는다.
+let adInFlight = false;
+
+// 보상형 광고 + adInFlight 관리. 성공/취소 어느 쪽이든 플래그를 내린다.
+function showAdGuarded(cb, onCancel) {
+  adInFlight = true;
+  const wrap = (f) => () => { adInFlight = false; f && f(); };
+  showAd(wrap(cb), wrap(onCancel));
+}
+
+// 전면광고를 띄우고 **닫힌 뒤에** cb를 실행한다. 노출 조건이 아니면 즉시 실행.
+// 이 순서가 핵심: 먼저 판을 시작해버리면 광고가 진행 중인 게임을 덮는다.
+// 네이티브가 응답하지 않는 경우에도 게임이 멎지 않도록 15초 안전장치를 둔다.
+function showInterstitialThen(cb) {
+  if (!shouldShowInterstitial()) { cb(); return; }
+  SAVE.runsSinceAd = 0; save();
+  let done = false;
+  adInFlight = true;
+  const go = () => { if (done) return; done = true; adInFlight = false; cb(); };
+  setTimeout(go, 15000);
+  try { window.showInterstitialNative().then(go).catch(go); } catch (e) { go(); }
+}
+function submitScoreNative() {
+  if (!nativeBridge()) return;
+  try {
+    window.flutter_inappwebview.callHandler(
+      'submitScore', SAVE.best, SAVE.nickname, SAVE.season.best);
+  } catch (e) {}
+}
+
+// 시즌 한정 스킨 해금 판정. 시즌 최고점이 목표를 넘으면 1회 지급.
+function checkSeasonSkin() {
+  if (!RC.seasonEnabled) return;
+  const sk = seasonSkin();
+  if (SAVE.ownedSkins.includes(sk.id)) return;
+  if (SAVE.season.best < RC.seasonGoal) return;
+  SAVE.ownedSkins.push(sk.id);
+  queueLinkPrompt('season');
+  // commitRun이 직전에 코인 효과음을 이미 냈으므로 여기선 토스트만.
+  toast('🏅 시즌 한정 스킨 «' + sk.name + '» 획득!');
+  logEv('season_skin_unlock', { season: seasonIndex(), skin: sk.id, score: SAVE.season.best });
+}
+
+// ---- 닉네임 설정 ----
+// 전역 유니크 검사는 하지 않음(중복 허용, uid로 식별). 형식 + 금칙어만 검증.
+const NICK_BAN = ['fuck', 'shit', 'bitch', 'asshole', 'nigger',
+  '시발', '씨발', '씨발', '병신', '새끼', '지랄', '좆', '니미', '애미', '엠창', '창녀', '보지', '자지'];
+function validateNick(raw) {
+  const n = (raw || '').trim().replace(/\s+/g, ' ');
+  if (!/^[가-힣A-Za-z0-9_ ]{2,12}$/.test(n)) {
+    return { ok: false, msg: '한글·영문·숫자 2~12자만 사용할 수 있어요' };
+  }
+  const low = n.toLowerCase().replace(/\s/g, '');
+  if (NICK_BAN.some(w => low.includes(w))) {
+    return { ok: false, msg: '사용할 수 없는 닉네임이에요' };
+  }
+  return { ok: true, value: n };
+}
+function openNickModal(firstRun) {
+  $('nickInput').value = SAVE.nickSet ? (SAVE.nickname || '') : '';
+  $('nickErr').textContent = '';
+  $('nickCount').textContent = [...$('nickInput').value].length + '/12';
+  $('nickSkip').style.display = firstRun ? '' : 'none';
+  $('nickAcctRow').style.display = (!firstRun && nativeBridge()) ? '' : 'none';
+  $('nickCancel').style.display = firstRun ? 'none' : '';
+  $('nickmodal').classList.add('show');
+  setTimeout(() => { try { $('nickInput').focus(); } catch (e) {} }, 60);
+}
+function closeNickModal() { $('nickmodal').classList.remove('show'); }
+function saveNick() {
+  const r = validateNick($('nickInput').value);
+  if (!r.ok) { $('nickErr').textContent = r.msg; return; }
+  SAVE.nickname = r.value; SAVE.nickSet = true; save();
+  refreshMeta();
+  closeNickModal();
+  submitScoreNative();   // 네이티브면 scores/{uid}.name 즉시 갱신
+  toast('닉네임 저장: ' + r.value);
+}
+// ---- 계정 연결 (Google/Apple) — 네이티브 전용 ----
+// 설계: 바운스타워_닉네임계정설계.md Phase 2. 브라우저에서는 전부 no-op.
+// Dart(RankingService)가 link/전환/삭제를 하고, 웹은 그 뒤 cloudResync()로 새 uid의
+// 클라우드를 다시 받아 병합한다. 로컬(SAVE)이 진실원본이라 어떤 실패에도 진행도는 남는다.
+let _acct = null;           // 마지막 getAccountState 응답 { enabled, uid, linked, providers, appleAvailable }
+let _acctBusy = false;
+let _acctHint = '';
+let _linkPromptQueued = ''; // 홈 복귀 시 띄울 권유 사유(광고·전환 화면과 겹치지 않게 지연)
+const ACCT_ERR = {
+  cancelled: '',
+  'not-configured': '로그인 설정이 아직 준비되지 않았어요',
+  'already-linked': '이미 연결된 계정이에요',
+  'in-use-other-account': '이 계정은 이미 다른 기록에 연결돼 있어요. 로그아웃 후 그 계정으로 로그인해 주세요',
+  network: '네트워크 연결을 확인해 주세요',
+  disabled: '서버에 연결되지 않았어요',
+  'requires-recent-login': '보안을 위해 다시 로그인한 뒤 시도해 주세요',
+};
+function acctLinked() { return !!(_acct && _acct.linked); }
+async function fetchAccountState() {
+  if (!nativeBridge()) return null;
+  try { _acct = await window.flutter_inappwebview.callHandler('getAccountState'); } catch (e) { _acct = null; }
+  _cloudOn = !!(_acct && _acct.enabled);
+  return _acct;
+}
+// 시작 시 + 연결·전환·로그아웃·삭제 뒤: 현재 uid의 클라우드를 받아 병합 → 저장/푸시 → 점수 재제출 → UI 갱신
+async function cloudResync() {
+  if (!nativeBridge()) return;
+  await fetchAccountState();
+  if (_cloudOn) {
+    try {
+      const cloud = await window.flutter_inappwebview.callHandler('cloudLoad');
+      if (cloud) mergeCloud(cloud);
+    } catch (e) {}
+  }
+  _cloudReady = true;
+  refreshMeta();
+  applyTheme();
+  save();                                   // 병합 결과를 로컬 저장 + 클라우드로 푸시
+  if (SAVE.best > 0) submitScoreNative();   // 새 uid의 랭킹 행 갱신(0점 행은 만들지 않음)
+}
+function acctErrText(code) {
+  const m = ACCT_ERR[code];
+  return m === undefined ? ('실패했어요 (' + code + ')') : m;
+}
+function acctStatusHtml() {
+  const head = _acctHint ? '<b>' + _acctHint + '</b><br>' : '';
+  if (!_acct || !_acct.enabled) return head + '서버에 연결되지 않았어요. 네트워크를 확인해 주세요.';
+  if (_acct.linked) {
+    const names = (_acct.providers || []).map(p => p === 'google.com' ? 'Google' : p === 'apple.com' ? 'Apple' : p).join(' · ');
+    return head + '<b>' + names + '</b> 계정에 연결됨<br>재설치·기기 변경 후 같은 계정으로 로그인하면 기록이 복원돼요.';
+  }
+  return head + '지금은 기록이 이 기기에만 묶여 있어요.<br>계정을 연결하면 재설치·기기 변경 후에도 랭킹과 진행도가 복원돼요.';
+}
+function renderAcct() {
+  $('acctStatus').innerHTML = acctStatusHtml();
+  const ps = (_acct && _acct.providers) || [];
+  const on = !!(_acct && _acct.enabled);
+  const g = $('acctGoogle'), a = $('acctApple');
+  const gOn = ps.includes('google.com'), aOn = ps.includes('apple.com');
+  g.classList.toggle('done', gOn);
+  g.querySelector('span').textContent = gOn ? 'Google 연결됨 ✓' : 'Google로 계속하기';
+  a.style.display = (_acct && _acct.appleAvailable) ? '' : 'none';   // Android Apple은 2차
+  a.classList.toggle('done', aOn);
+  a.querySelector('span').textContent = aOn ? 'Apple 연결됨 ✓' : 'Apple로 로그인';
+  g.disabled = a.disabled = !on || _acctBusy;
+  $('acctLinks').style.display = acctLinked() ? '' : 'none';
+  $('acctConfirm').classList.remove('show');
+  $('acctErr').textContent = _acctBusy ? '잠시만요…' : '';
+}
+function openAcctModal(hint) {
+  if (!nativeBridge()) { toast('앱에서만 사용할 수 있어요'); return; }
+  _acctHint = hint || '';
+  closeNickModal();
+  renderAcct();
+  $('acctmodal').classList.add('show');
+  fetchAccountState().then(renderAcct);   // 최신 상태로 한 번 더
+}
+function closeAcctModal() { $('acctmodal').classList.remove('show'); _acctHint = ''; }
+async function acctLink(provider) {
+  if (_acctBusy) return;
+  _acctBusy = true; renderAcct();
+  let res = null;
+  try { res = await window.flutter_inappwebview.callHandler('linkAccount', provider); } catch (e) {}
+  res = res || { ok: false, error: 'unknown' };
+  _acctBusy = false;
+  logEv('account_link', { provider: provider, error: res.error || '',
+    result: res.ok ? (res.switched ? 'switched' : 'linked') : (res.error === 'cancelled' ? 'cancelled' : 'error') });
+  if (res.ok) {
+    _acctHint = '';
+    await cloudResync();        // switched면 다른 기기의 기록이 여기서 합쳐진다(max/union, 무손실)
+    renderAcct();
+    toast(res.switched ? '☁️ 다른 기기의 기록과 합쳐졌어요' : '☁️ 계정이 연결됐어요');
+  } else {
+    await fetchAccountState();
+    renderAcct();
+    $('acctErr').textContent = acctErrText(res.error);
+  }
+}
+async function acctSignOut() {
+  if (_acctBusy) return;
+  _acctBusy = true; renderAcct();
+  let res = null;
+  try { res = await window.flutter_inappwebview.callHandler('signOut'); } catch (e) {}
+  _acctBusy = false;
+  const ok = !!(res && res.ok);
+  logEv('account_signout', { ok: ok });
+  await cloudResync();          // 새 익명 uid — 로컬은 그대로, 클라우드에 새로 백업된다
+  renderAcct();
+  toast(ok ? '로그아웃했어요. 이 기기의 기록은 그대로예요' : '로그아웃에 실패했어요');
+}
+async function acctDelete() {
+  if (_acctBusy) return;
+  _acctBusy = true; renderAcct();
+  let res = null;
+  try { res = await window.flutter_inappwebview.callHandler('deleteAccount'); } catch (e) {}
+  res = res || { ok: false, error: 'unknown' };
+  _acctBusy = false;
+  logEv('account_delete', { error: res.error || '',
+    result: res.ok ? 'ok' : (res.error === 'cancelled' ? 'cancelled' : 'error') });
+  await cloudResync();
+  renderAcct();
+  if (res.ok) toast('계정을 삭제했어요. 이 기기의 진행도는 남아 있어요');
+  else $('acctErr').textContent = res.error === 'cancelled' ? '' : acctErrText(res.error);
+}
+// 권유는 "잃으면 아까운 순간"(첫 상점 구매 / 시즌 스킨 획득 / 최고점 갱신)에 **1회만**.
+// 광고·화면 전환과 겹치지 않도록 큐에 넣고 홈에 돌아왔을 때(showScreen('home')) 띄운다.
+function queueLinkPrompt(reason) {
+  if (!nativeBridge() || SAVE.linkPrompted || _linkPromptQueued) return;
+  _linkPromptQueued = reason;
+}
+function flushLinkPrompt() {
+  const reason = _linkPromptQueued;
+  if (!reason) return;
+  _linkPromptQueued = '';
+  if (SAVE.linkPrompted || !_cloudReady || !_cloudOn || acctLinked()) return;   // 오프라인·이미 연결이면 다음 기회에
+  SAVE.linkPrompted = true; save();
+  logEv('account_link_prompt', { reason: reason });
+  setTimeout(() => openAcctModal('🏅 소중한 기록이 생겼어요! 계정을 연결하면 잃지 않아요'), 500);
+}
+function rankRows(rows, sub, season) {
+  const myBest = season ? SAVE.season.best : SAVE.best;
+  const [tn, col] = tierOf(myBest);
+  const sk = seasonSkin();
+  // 시즌 탭: 남은 기간 + 한정 스킨 진행도를 함께 보여줘 재도전 동기를 만든다
+  const seasonLine = season
+    ? '<div class="tsub">🏅 시즌 ' + (seasonIndex() + 1) + ' · ' + seasonLeftText() + '</div>' +
+      '<div class="tsub">한정 스킨 «' + sk.name + '» ' +
+        (SAVE.ownedSkins.includes(sk.id) ? '획득 완료 ✅'
+                                         : Math.min(myBest, RC.seasonGoal) + ' / ' + RC.seasonGoal) + '</div>'
+    : '';
+  $('tierBox').innerHTML = '<div class="tname" style="color:' + col + '">' + tn + '</div>' +
+                           '<div class="tsub">' + (season ? '시즌 최고점 ' : '내 최고점 ') + myBest + '점' + (sub ? ' · ' + sub : '') + '</div>' +
+                           seasonLine +
+                           '<div class="tsub" style="margin-top:6px"><span id="rankNickEdit" style="cursor:pointer;color:#4dffa0;text-decoration:underline">✏️ ' + (SAVE.nickname || '닉네임') + '</span>' +
+                           (nativeBridge() ? ' &nbsp;·&nbsp; <span id="rankAcct" style="cursor:pointer;color:#4dd2ff;text-decoration:underline">' +
+                                             (acctLinked() ? '🔗 계정 연결됨' : '☁️ 계정 연결') + '</span>' : '') + '</div>';
+  const rne = $('rankNickEdit'); if (rne) rne.onclick = () => { SFX.ui(); openNickModal(false); };
+  const rac = $('rankAcct'); if (rac) rac.onclick = () => { SFX.ui(); openAcctModal(); };
+  const list = $('rankList'); list.innerHTML = '';
+  rows.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'rankrow' + (p.you ? ' you' : '');
+    row.innerHTML = '<div class="rk">' + (p.rk || (i + 1)) + '</div><div class="nm">' + (p.you ? '🙋 ' + (p.nm || 'YOU') : p.nm) + '</div><div class="sc">' + p.sc + '</div>';
+    list.appendChild(row);
+  });
+}
+let rankMode = 'all';   // 'all' | 'season'
+async function renderRank() {
+  const season = rankMode === 'season';
+  const myBest = season ? SAVE.season.best : SAVE.best;
+  // 1) 네이티브(Firebase) 실데이터 시도
+  if (nativeBridge()) {
+    try {
+      const data = await window.flutter_inappwebview.callHandler(
+        season ? 'getSeasonLeaderboard' : 'getLeaderboard', myBest);
+      if (data && data.top && data.top.length) {
+        const rows = data.top.map(t => ({ nm: t.name, sc: t.best, you: !!t.me }));
+        rankRows(rows, data.myRank ? ('내 순위 ' + data.myRank + '위') : '', season);
+        return;
+      }
+    } catch (e) {}
+  }
+  // 2) 폴백: 봇 목업 랭킹 (시즌은 기간이 짧으니 봇 점수도 낮게 잡는다)
+  const all = BOTS.map(b => ({ nm: b[0], sc: season ? Math.floor(b[1] * 0.6) : b[1], you: false }));
+  all.push({ nm: 'YOU', sc: myBest, you: true });
+  all.sort((a, b) => b.sc - a.sc);
+  rankRows(all, '', season);
+}
+
+// ---- 이벤트 바인딩 ----
+$('playBtn').onclick = () => { audioInit(); SFX.ui(); startGame(); };
+$('tabShop').onclick = () => { audioInit(); SFX.ui(); refreshMeta(); renderShop(); showScreen('shop'); };
+$('tabDaily').onclick = () => { audioInit(); SFX.ui(); renderDaily(); showScreen('daily'); };
+$('tabRank').onclick = () => {
+  audioInit(); SFX.ui();
+  // Remote Config로 시즌을 끄면 탭을 숨기고 전체 랭킹으로 되돌린다
+  const st = document.querySelector('#rankTabs .shoptab[data-rank="season"]');
+  if (st) st.style.display = RC.seasonEnabled ? '' : 'none';
+  if (!RC.seasonEnabled && rankMode === 'season') {
+    rankMode = 'all';
+    document.querySelectorAll('#rankTabs .shoptab')
+      .forEach(t => t.classList.toggle('active', t.dataset.rank === 'all'));
+  }
+  renderRank(); showScreen('rank');
+};
+$('shopClose').onclick = () => showScreen('home');
+$('dailyClose').onclick = () => showScreen('home');
+$('rankClose').onclick = () => showScreen('home');
+$('homeNick').onclick = () => { SFX.ui(); openNickModal(false); };
+$('nickSave').onclick = () => { SFX.ui(); saveNick(); };
+$('nickCancel').onclick = () => closeNickModal();
+$('nickSkip').onclick = () => { SAVE.nickSet = true; save(); closeNickModal(); };
+$('nickInput').oninput = () => {
+  $('nickCount').textContent = [...$('nickInput').value].length + '/12';
+  $('nickErr').textContent = '';
+};
+$('nickInput').onkeydown = (e) => { if (e.key === 'Enter') saveNick(); };
+$('nickAcct').onclick = () => { SFX.ui(); openAcctModal(); };
+$('acctGoogle').onclick = () => { SFX.ui(); acctLink('google'); };
+$('acctApple').onclick = () => { SFX.ui(); acctLink('apple'); };
+$('acctClose').onclick = () => closeAcctModal();
+$('acctSignOut').onclick = () => { SFX.ui(); acctSignOut(); };
+$('acctDelete').onclick = () => { SFX.ui(); $('acctConfirm').classList.toggle('show'); };   // 1단계: 경고 펼침
+$('acctDeleteGo').onclick = () => { SFX.ui(); acctDelete(); };                               // 2단계: 실제 삭제
+$('reviveItemBtn').onclick = () => reviveWithItem();
+// 상점/랭킹이 같은 .shoptab 스타일을 공유하므로 셀렉터를 화면별로 좁힌다
+document.querySelectorAll('#shop .shoptab').forEach(tab => tab.onclick = () => {
+  document.querySelectorAll('#shop .shoptab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  shopCat = tab.dataset.cat; SFX.ui(); renderShop();
+});
+document.querySelectorAll('#rankTabs .shoptab').forEach(tab => tab.onclick = () => {
+  document.querySelectorAll('#rankTabs .shoptab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  rankMode = tab.dataset.rank; SFX.ui(); renderRank();
+});
+
+// 정산 → (조건이면) 전면광고 → 광고가 닫힌 뒤에 다음 화면으로.
+$('retryBtn').onclick = () => { commitRun(); showInterstitialThen(startGame); };
+$('homeBtn').onclick = () => {
+  commitRun();
+  showInterstitialThen(() => { state = 'home'; showScreen('home'); });
+};
+$('reviveBtn').onclick = () => revive();
+$('doubleBtn').onclick = () => {
+  if (coinMult === 2 || committed) return;   // 이미 정산됐으면 소용없음
+  showAdGuarded(() => {
+    coinMult = 2;
+    const earned = earnedCoins(2);
+    $('earnCoins').textContent = '+' + earned + ' 🪙 (2배!)';
+    $('doubleBtn').disabled = true;
+    toast('코인 2배 적용!');
+    logEv('coin_double', { source: 'ad', coins: earned });
+  }, () => toast('광고를 끝까지 봐야 코인 2배를 받을 수 있어요'));
+};
+
+// ───────────── 백그라운드 전환 처리 ─────────────
+// · 플레이 중이면 일시정지 — 광고/전화가 화면을 덮은 사이 공이 계속 떨어지는 것 방지.
+// · 게임오버 화면이면 즉시 정산 — 그대로 앱을 종료해도 코인·미션·시즌점수가 날아가지 않게.
+//
+// 단, **광고가 떠 있는 동안의 hidden은 이탈이 아니다.** 여기서 정산해버리면
+// 부활로 이어지는 판이 committed 상태가 되어 정산 불가가 된다.
+let pausedByHide = false;
+function onHidden() {
+  if (state === 'playing') { pausedByHide = true; state = 'paused'; }
+  else if (state === 'over' && !adInFlight) commitRun();
+}
+function onVisible() {
+  // 숨어 있는 동안 정산됐다면 코인2배는 더 이상 의미가 없다
+  if (state === 'over' && committed) $('doubleBtn').disabled = true;
+  if (!pausedByHide) return;
+  pausedByHide = false;
+  prev = performance.now();          // 복귀 프레임에 큰 dt가 몰리지 않도록
+  if (state === 'paused') state = 'playing';
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) onHidden(); else onVisible();
+});
+// pagehide는 페이지가 실제로 파기되는 신호 → 광고 중이라도 정산해 둔다
+window.addEventListener('pagehide', () => { if (state === 'over') commitRun(); });
+
+// ---- 튜닝 패널 ----
+const panel = $('panel');
+$('grip').onclick = () => panel.classList.toggle('open');
+$('rageTest').onclick = () => {
+  if (state !== 'playing') { toast('플레이 중에 눌러주세요'); return; }
+  audioInit(); rageLeft = RAGE_RINGS; setRage(true); updateHUD();
+};
+function bindSlider(id, key, fmt) {
+  const s = $('s_' + id), v = $('v_' + id);
+  s.value = P[key]; v.textContent = fmt(P[key]);
+  s.addEventListener('input', () => { P[key] = +s.value; v.textContent = fmt(+s.value); });
+}
+bindSlider('grav', 'gravity', x => x.toFixed(0));
+bindSlider('bounce', 'bounce', x => x.toFixed(1));
+bindSlider('rot', 'rotateSpeed', x => x.toFixed(3));
+bindSlider('danger', 'dangerMax', x => x.toFixed(2));
+bindSlider('gap', 'ringSpacing', x => x.toFixed(1));
+
+// ---- 시작 ----
+setupTower();       // 홈 배경용 타워 배치
+setRage(false);     // 장착 스킨 색 적용
+refreshMeta();
+showScreen('home');
+if (!SAVE.nickSet) openNickModal(true);   // 최초 실행: 닉네임 설정 권유(건너뛰기 가능)
+applyRemoteConfig();                      // 네이티브: 밸런스·시즌 설정 주입 (브라우저는 no-op)
+cloudSyncOnStart();                       // 네이티브: 클라우드 세이브 pull+merge (브라우저는 no-op)
+requestAnimationFrame(animate);
+</script>
+<!-- ===== Flutter <-> JS ad bridge (native AdMob) ===== -->
+<script>
+(function () {
+  var hasBridge = !!(window.flutter_inappwebview && window.flutter_inappwebview.callHandler);
+  window.BT_NATIVE = hasBridge;
+  if (!hasBridge) return;
+  // 보상형: true(보상완료)/'noad'(광고없음)면 cb, false(중도종료)면 onCancel.
+  // onCancel이 없으면 사용자는 아무 반응도 못 본다 → 호출측이 반드시 넘길 것.
+  window.showAd = function (cb, onCancel) {
+    window.flutter_inappwebview.callHandler("showRewarded").then(function (res) {
+      if (res === true || res === "noad") { cb && cb(); }
+      else { onCancel && onCancel(); }
+    }).catch(function () { cb && cb(); });
+  };
+
+  // 전면: 광고가 **닫힌 뒤** resolve되는 Promise를 그대로 넘긴다.
+  // 노출 여부 판단(첫 N판 보호·M판마다)은 세이브를 쥔 웹의 shouldShowInterstitial()이 한다.
+  // ⚠️ 예전처럼 retryBtn/homeBtn에 리스너를 따로 걸면 안 된다 —
+  //    onclick(판 시작)이 먼저 실행돼 광고가 진행 중인 판을 덮는다.
+  window.showInterstitialNative = function () {
+    return window.flutter_inappwebview.callHandler("showInterstitial");
+  };
+})();
+</script>
+</body>
+</html>

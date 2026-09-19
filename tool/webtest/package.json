@@ -1,0 +1,7 @@
+{
+  "name": "bounce-tower-webtest",
+  "private": true,
+  "type": "module",
+  "description": "계정 연결 웹 플로우 회귀 테스트(목 브리지 + 헤드리스 Chrome). node run.mjs",
+  "dependencies": { "playwright-core": "^1.62.1" }
+}

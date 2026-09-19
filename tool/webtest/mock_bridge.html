@@ -1,0 +1,25 @@
+<script>
+// ── 테스트용 Flutter 브리지 목업 ──
+window.__calls = [];
+window.__state = { enabled: true, uid: 'A', linked: false, isAnonymous: true, providers: [], appleAvailable: true };
+window.__cloud = { A: null,
+  B: { coins: 500, best: 77, ownedSkins: ['classic', 'gold'], nickname: 'CloudNick', nickSet: true,
+       stats: { games: 40 }, items: { revive: 2 }, season: { id: 'S999', best: 999 } } };
+window.flutter_inappwebview = { callHandler: async function (name) {
+  const args = [].slice.call(arguments, 1); const st = window.__state;
+  window.__calls.push([name].concat(args.map(a => (a && typeof a === 'object') ? JSON.parse(JSON.stringify(a)) : a)));
+  await new Promise(r => setTimeout(r, 20));
+  switch (name) {
+    case 'getAccountState': return Object.assign({}, st);
+    case 'cloudLoad': return window.__cloud[st.uid] || null;
+    case 'getRemoteConfig': return {};
+    case 'linkAccount':
+      if (args[0] === 'google') { st.uid = 'B'; st.linked = true; st.isAnonymous = false; st.providers = ['google.com'];
+                                  return { ok: true, switched: true, providers: st.providers }; }
+      return { ok: false, switched: false, providers: st.providers, error: 'not-configured' };
+    case 'signOut': st.uid = 'C'; st.linked = false; st.isAnonymous = true; st.providers = []; return { ok: true };
+    case 'deleteAccount': st.uid = 'D'; st.linked = false; st.isAnonymous = true; st.providers = []; return { ok: true };
+    default: return null;
+  }
+} };
+</script>

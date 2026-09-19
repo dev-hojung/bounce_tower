@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 점수 문서 공통 검증: 본인 문서 + 숫자 best + 닉네임 길이 제한.
+    function validScore(uid) {
+      return request.auth != null
+             && request.auth.uid == uid
+             && request.resource.data.best is int
+             && request.resource.data.best <= 1000000
+             && request.resource.data.name is string
+             && request.resource.data.name.size() <= 16;
+    }
+
+    // 랭킹: 누구나 읽기. 쓰기는 로그인한 본인 문서만, 점수는 숫자이며
+    // 기존 best보다 클 때만 갱신(간단한 어뷰징 방어). 닉네임 길이 제한.
+    match /scores/{uid} {
+      allow read: if true;
+      allow create: if validScore(uid) && request.resource.data.best >= 0;
+      allow update: if validScore(uid)
+                    && request.resource.data.best >= resource.data.best;
+      // 계정 연결 시 익명 uid의 유령 행 정리 / 계정 삭제(스토어 정책) — 본인 문서만.
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // 시즌 랭킹: 2주 단위 시즌별 최고점. 규칙은 전체 랭킹과 동일하며,
+    // 시즌이 바뀌면 새 seasonId 하위에 문서가 새로 생성된다(자연 리셋).
+    // seasonId는 'S' + 숫자(최대 4자리)만 허용 — 임의 문자열로 컬렉션을
+    // 무한 생성하는 것을 막는다(lib/ranking.dart의 seasonId 형식과 일치).
+    match /seasons/{seasonId}/scores/{uid} {
+      allow read: if seasonId.matches('^S[0-9]{1,4}$');
+      allow create: if seasonId.matches('^S[0-9]{1,4}$')
+                    && validScore(uid) && request.resource.data.best >= 0;
+      allow update: if seasonId.matches('^S[0-9]{1,4}$')
+                    && validScore(uid)
+                    && request.resource.data.best >= resource.data.best;
+      allow delete: if seasonId.matches('^S[0-9]{1,4}$')
+                    && request.auth != null && request.auth.uid == uid;
+    }
+
+    // 클라우드 세이브: 본인만 읽기/쓰기 (write에 delete 포함 → 계정 삭제 시 함께 지움)
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
