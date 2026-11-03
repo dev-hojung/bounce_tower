@@ -82,5 +82,5 @@ Find out how deep you can get.
 ## Contact
 
 - Email: dev.hojung@gmail.com
-- Privacy policy: https://bounce-tower.web.app/privacy
-- Account deletion: https://bounce-tower.web.app/delete-account
+- Privacy policy: https://dev-hojung.github.io/bounce_tower/privacy
+- Account deletion: https://dev-hojung.github.io/bounce_tower/delete-account

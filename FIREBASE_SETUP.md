@@ -57,19 +57,19 @@
   즉시 확인하려면 앱을 재설치하거나 콘솔에서 값을 바꾸고 1시간 뒤 확인.
 - 코드: `lib/remote_config.dart`, 브리지 `getRemoteConfig`, 웹 `applyRemoteConfig()`
 
-## 6. Hosting — 정책 페이지·웹 데모 (✅ 2026-11)
-스토어 제출용 공개 URL을 Firebase Hosting으로 서빙한다(이전엔 Railway).
+## 6. 정책 페이지 — GitHub Pages (✅ 2026-11)
+스토어 제출용 공개 URL은 Firebase가 아니라 **GitHub Pages**로 서빙한다(이전엔 Railway, 잠시 Firebase Hosting).
+저장소 설정: Pages 소스 = `main` 브랜치 `/docs`. **`main`에 푸시하면 1분 안에 자동 반영**되며 별도 배포 명령이 없다.
 
-| URL | 원본 |
-|---|---|
-| https://bounce-tower.web.app/privacy | `hosting/privacy.html` |
-| https://bounce-tower.web.app/delete-account | `hosting/delete-account.html` |
-| https://bounce-tower.web.app/ | `assets/www/index.html` (웹 데모, 목업 모드) |
+| URL | 원본 | 제출처 |
+|---|---|---|
+| https://dev-hojung.github.io/bounce_tower/privacy | `docs/privacy.html` | Play 앱 콘텐츠 → 개인정보처리방침, App Store Connect |
+| https://dev-hojung.github.io/bounce_tower/delete-account | `docs/delete-account.html` | Play 데이터 보안 → 계정 삭제 URL |
 
-```bash
-! firebase deploy --only hosting      # predeploy가 tool/build_hosting.sh로 build/hosting을 만든다
-```
-상세: `hosting/README.md`
+- 프로젝트 사이트라 경로가 `/bounce_tower/` 아래다. 페이지 사이 링크는 **상대경로**(`href="privacy"`)로 써야 한다.
+- 데이터 수집 항목(아래 "데이터 모델", Play 데이터 보안 답변)이 바뀌면 `docs/privacy.html`도 같이 고친다.
+- `docs/`에 `README.md`를 두지 않는다 — Pages가 사이트 루트 페이지로 렌더링한다.
+- 웹 데모는 운영하지 않는다.
 
 ## ⚠️ Firebase 패키지는 "같은 세대"끼리만 묶인다 (가장 많이 깨진 지점)
 

@@ -29,27 +29,5 @@
         }
       }
     }
-  },
-  "hosting": {
-    "public": "build/hosting",
-    "predeploy": [
-      "bash \"$PROJECT_DIR/tool/build_hosting.sh\""
-    ],
-    "cleanUrls": true,
-    "ignore": [
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "headers": [
-      {
-        "source": "**/*.html",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-cache"
-          }
-        ]
-      }
-    ]
   }
 }

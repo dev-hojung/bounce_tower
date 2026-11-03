@@ -81,5 +81,5 @@ Google 또는 Apple 계정을 연결하면 재설치하거나 기기를 바꿔�
 ## 연락처
 
 - 이메일: dev.hojung@gmail.com
-- 개인정보처리방침: https://bounce-tower.web.app/privacy
-- 계정 삭제: https://bounce-tower.web.app/delete-account
+- 개인정보처리방침: https://dev-hojung.github.io/bounce_tower/privacy
+- 계정 삭제: https://dev-hojung.github.io/bounce_tower/delete-account

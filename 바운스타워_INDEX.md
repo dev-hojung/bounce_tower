@@ -131,8 +131,8 @@ cd /Users/khj/develop/bounce_tower && flutter run -d <device>
 Unity 정식 이식은 **중단·폐기**했다(웹 프로토타입의 블룸/오로라 퀄리티 재현이 비효율적, 결과물 품질도 웹보다 낮음). 대신 완성된 Three.js 웹 게임을 그대로 살리는 방식으로 전환:
 
 - **앱**: `bounce_tower/`(Flutter) — `flutter_inappwebview`(로컬 서버) + 네이티브 `google_mobile_ads`. 게임 본체는 `assets/www`. 상세 `bounce_tower/README.md`.
-- **웹 배포**: Firebase Hosting — https://bounce-tower.web.app (원본 `bounce_tower/hosting/` + `assets/www`).
-  2026-11에 Railway(`bounce-tower-web/`)에서 이전 — 앱 저장소 하나로 관리. 상세 `bounce_tower/hosting/README.md`
+- **정책 페이지**: GitHub Pages — https://dev-hojung.github.io/bounce_tower/privacy, https://dev-hojung.github.io/bounce_tower/delete-account (원본 `bounce_tower/docs/`, `main` 푸시 시 자동 반영).
+  2026-11에 Railway(`bounce-tower-web/`)에서 이전 — 앱 저장소 하나로 관리. 웹 데모는 운영하지 않는다. 상세 `bounce_tower/FIREBASE_SETUP.md` 6장
 - 위 6장의 Unity 관련 내용(UNITY_BUILD_PLAN 등)은 **참고용 과거 기록**.
 
 > ⚠️ **게임 본체의 원본은 `bounce_tower/assets/www/index.html`이다.**
