@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "760562010684-upe4g2s1rrk7buba8lv8lf1j287rvcik.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bouncetower.bounce_tower",
+            "certificate_hash": "90303ebda03ec3aef5e14e11fa361d5de77ee27f"
+          }
+        },
+        {
           "client_id": "760562010684-m86mf30eqsbosu7mkfn3pl3dutv037if.apps.googleusercontent.com",
           "client_type": 3
         }

@@ -1,0 +1,7 @@
+{
+  "name": "bounce-tower-store-assets",
+  "private": true,
+  "type": "module",
+  "description": "스토어 스크린샷·그래픽 생성 (node shots.mjs / node graphic.mjs)",
+  "dependencies": { "playwright-core": "^1.62.1" }
+}

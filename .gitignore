@@ -52,3 +52,6 @@ android/key.properties
 
 # OMC 작업 상태(로컬 전용)
 .omc/
+
+# Firebase CLI 배포 캐시
+.firebase/

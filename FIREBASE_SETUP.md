@@ -57,6 +57,20 @@
   즉시 확인하려면 앱을 재설치하거나 콘솔에서 값을 바꾸고 1시간 뒤 확인.
 - 코드: `lib/remote_config.dart`, 브리지 `getRemoteConfig`, 웹 `applyRemoteConfig()`
 
+## 6. Hosting — 정책 페이지·웹 데모 (✅ 2026-11)
+스토어 제출용 공개 URL을 Firebase Hosting으로 서빙한다(이전엔 Railway).
+
+| URL | 원본 |
+|---|---|
+| https://bounce-tower.web.app/privacy | `hosting/privacy.html` |
+| https://bounce-tower.web.app/delete-account | `hosting/delete-account.html` |
+| https://bounce-tower.web.app/ | `assets/www/index.html` (웹 데모, 목업 모드) |
+
+```bash
+! firebase deploy --only hosting      # predeploy가 tool/build_hosting.sh로 build/hosting을 만든다
+```
+상세: `hosting/README.md`
+
 ## ⚠️ Firebase 패키지는 "같은 세대"끼리만 묶인다 (가장 많이 깨진 지점)
 
 각 Firebase 플러그인은 특정 `firebase_core` 세대와 **네이티브 코드가 짝지어져** 있다.
@@ -166,7 +180,7 @@ users/{uid}                       : { save: {...웹 SAVE 통째...}, updatedAt }
 | Google·Apple provider ON | ✅ (Apple의 Services ID는 비움 — iOS 네이티브엔 불필요) |
 | 익명 자동 삭제 OFF | ✅ 기본값 유지 확인 |
 | debug SHA-1/SHA-256 등록 | ✅ Firebase Management API로 등록 |
-| upload 키스토어 SHA-1 | ⬜ 키 생성 후 |
+| upload 키스토어 SHA-1/256 | ✅ 2026-09-19 (`~/bounce-tower-upload.jks`, alias `upload`) |
 | Play App Signing SHA-1 | ⬜ Play Console 등록 후 |
 | `flutterfire configure` 재실행 | ✅ `oauth_client` web/android + iOS `CLIENT_ID` 생성됨 |
 | iOS URL scheme(`REVERSED_CLIENT_ID`) | ✅ `Info.plist` 등록 |
