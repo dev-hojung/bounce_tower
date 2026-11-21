@@ -61,11 +61,6 @@ that disappears when the season ends.
 The game itself runs with no connection at all.
 The network is only used for rankings and progress backup.
 
-■ Switch phones without losing anything
-Link a Google or Apple account and your best score, coins and skins come back
-after a reinstall or on a new device.
-Linking is entirely optional — every feature works without signing in.
-
 ■ How it is funded
 Ad-supported, with no paid products of any kind.
 Revives and double coins are rewarded ads you choose to watch.

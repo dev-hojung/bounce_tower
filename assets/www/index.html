@@ -356,7 +356,7 @@
     </button>
     <div class="err" id="acctErr"></div>
     <div class="acts"><button class="btn ghost" id="acctClose">닫기</button></div>
-    <div class="skip" id="acctLinks"><a id="acctSignOut">로그아웃</a> &nbsp;·&nbsp; <a id="acctDelete" class="danger">계정 삭제</a></div>
+    <div class="skip" id="acctLinks"><a id="acctSignOut">로그아웃</a><span id="acctSep"> &nbsp;·&nbsp; </span><a id="acctDelete" class="danger">계정 삭제</a></div>
     <div class="confirm" id="acctConfirm">
       랭킹 기록과 클라우드 세이브가 <b>영구 삭제</b>되고 연결이 해제돼요. 이 기기의 진행도는 남아요.
       <button class="btn" id="acctDeleteGo">정말 삭제할래요</button>
@@ -1568,6 +1568,7 @@ function openNickModal(firstRun) {
   $('nickCount').textContent = [...$('nickInput').value].length + '/12';
   $('nickSkip').style.display = firstRun ? '' : 'none';
   $('nickAcctRow').style.display = (!firstRun && nativeBridge()) ? '' : 'none';
+  $('nickAcct').textContent = ACCT_LINK_ENABLED ? '☁️ 계정 연결로 기록 지키기' : '⚙️ 계정 관리';
   $('nickCancel').style.display = firstRun ? 'none' : '';
   $('nickmodal').classList.add('show');
   setTimeout(() => { try { $('nickInput').focus(); } catch (e) {} }, 60);
@@ -1587,6 +1588,9 @@ function saveNick() {
 // Dart(RankingService)가 link/전환/삭제를 하고, 웹은 그 뒤 cloudResync()로 새 uid의
 // 클라우드를 다시 받아 병합한다. 로컬(SAVE)이 진실원본이라 어떤 실패에도 진행도는 남는다.
 let _acct = null;           // 마지막 getAccountState 응답 { enabled, uid, linked, providers, appleAvailable }
+// 계정 연결(Google/Apple) 노출 스위치. 2026-11 출시는 연결 없이 나간다(Play 앱 서명 SHA-1·Apple App ID 설정 전).
+// false면 연결 버튼·권유 팝업을 숨기고 계정 화면은 "계정 관리(삭제)"로만 쓴다. 네이티브 연결 코드는 그대로 둔다.
+const ACCT_LINK_ENABLED = false;
 let _acctBusy = false;
 let _acctHint = '';
 let _linkPromptQueued = ''; // 홈 복귀 시 띄울 권유 사유(광고·전환 화면과 겹치지 않게 지연)
@@ -1633,6 +1637,7 @@ function acctStatusHtml() {
     const names = (_acct.providers || []).map(p => p === 'google.com' ? 'Google' : p === 'apple.com' ? 'Apple' : p).join(' · ');
     return head + '<b>' + names + '</b> 계정에 연결됨<br>재설치·기기 변경 후 같은 계정으로 로그인하면 기록이 복원돼요.';
   }
+  if (!ACCT_LINK_ENABLED) return head + '랭킹 기록과 진행도 백업은 이 기기의 익명 계정에 저장돼요.<br>계정을 삭제하면 서버에 저장된 기록이 모두 지워져요.';
   return head + '지금은 기록이 이 기기에만 묶여 있어요.<br>계정을 연결하면 재설치·기기 변경 후에도 랭킹과 진행도가 복원돼요.';
 }
 function renderAcct() {
@@ -1647,7 +1652,11 @@ function renderAcct() {
   a.classList.toggle('done', aOn);
   a.querySelector('span').textContent = aOn ? 'Apple 연결됨 ✓' : 'Apple로 로그인';
   g.disabled = a.disabled = !on || _acctBusy;
-  $('acctLinks').style.display = acctLinked() ? '' : 'none';
+  if (!ACCT_LINK_ENABLED) g.style.display = a.style.display = 'none';
+  // 삭제는 익명 계정도 가능해야 한다(Play 계정 삭제 정책). 로그아웃은 연결된 계정에만 의미가 있다.
+  const showOut = ACCT_LINK_ENABLED && acctLinked();
+  $('acctSignOut').style.display = $('acctSep').style.display = showOut ? '' : 'none';
+  $('acctLinks').style.display = (showOut || (on && !ACCT_LINK_ENABLED)) ? '' : 'none';
   $('acctConfirm').classList.remove('show');
   $('acctErr').textContent = _acctBusy ? '잠시만요…' : '';
 }
@@ -1709,7 +1718,7 @@ async function acctDelete() {
 // 권유는 "잃으면 아까운 순간"(첫 상점 구매 / 시즌 스킨 획득 / 최고점 갱신)에 **1회만**.
 // 광고·화면 전환과 겹치지 않도록 큐에 넣고 홈에 돌아왔을 때(showScreen('home')) 띄운다.
 function queueLinkPrompt(reason) {
-  if (!nativeBridge() || SAVE.linkPrompted || _linkPromptQueued) return;
+  if (!ACCT_LINK_ENABLED || !nativeBridge() || SAVE.linkPrompted || _linkPromptQueued) return;
   _linkPromptQueued = reason;
 }
 function flushLinkPrompt() {
@@ -1737,7 +1746,7 @@ function rankRows(rows, sub, season) {
                            seasonLine +
                            '<div class="tsub" style="margin-top:6px"><span id="rankNickEdit" style="cursor:pointer;color:#4dffa0;text-decoration:underline">✏️ ' + (SAVE.nickname || '닉네임') + '</span>' +
                            (nativeBridge() ? ' &nbsp;·&nbsp; <span id="rankAcct" style="cursor:pointer;color:#4dd2ff;text-decoration:underline">' +
-                                             (acctLinked() ? '🔗 계정 연결됨' : '☁️ 계정 연결') + '</span>' : '') + '</div>';
+                                             (!ACCT_LINK_ENABLED ? '⚙️ 계정 관리' : acctLinked() ? '🔗 계정 연결됨' : '☁️ 계정 연결') + '</span>' : '') + '</div>';
   const rne = $('rankNickEdit'); if (rne) rne.onclick = () => { SFX.ui(); openNickModal(false); };
   const rac = $('rankAcct'); if (rac) rac.onclick = () => { SFX.ui(); openAcctModal(); };
   const list = $('rankList'); list.innerHTML = '';
