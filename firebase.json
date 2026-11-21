@@ -7,7 +7,7 @@
       "android": {
         "default": {
           "projectId": "bounce-tower",
-          "appId": "1:760562010684:android:5120201efc97f2c9655139",
+          "appId": "1:760562010684:android:3b559afebeedbed3655139",
           "fileOutput": "android/app/google-services.json"
         }
       },
@@ -23,7 +23,7 @@
         "lib/firebase_options.dart": {
           "projectId": "bounce-tower",
           "configurations": {
-            "android": "1:760562010684:android:5120201efc97f2c9655139",
+            "android": "1:760562010684:android:3b559afebeedbed3655139",
             "ios": "1:760562010684:ios:451a67d627acd908655139"
           }
         }

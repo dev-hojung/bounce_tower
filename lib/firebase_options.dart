@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyA1KzYDhn9Y7X_VltsL4xkh6X-nJZx6iR4',
-    appId: '1:760562010684:android:5120201efc97f2c9655139',
+    appId: '1:760562010684:android:3b559afebeedbed3655139',
     messagingSenderId: '760562010684',
     projectId: 'bounce-tower',
     storageBucket: 'bounce-tower.firebasestorage.app',

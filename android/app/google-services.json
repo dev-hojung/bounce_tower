@@ -7,6 +7,58 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:760562010684:android:3b559afebeedbed3655139",
+        "android_client_info": {
+          "package_name": "com.bounce.tower"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "760562010684-r3tvctebenlej3ckg82d1302qbl1g3i8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bounce.tower",
+            "certificate_hash": "48c6befd97c3ffba2084638839cfc9954b86bce3"
+          }
+        },
+        {
+          "client_id": "760562010684-s6qef0ofoth284qlrd15idfgmos6kb1u.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bounce.tower",
+            "certificate_hash": "90303ebda03ec3aef5e14e11fa361d5de77ee27f"
+          }
+        },
+        {
+          "client_id": "760562010684-m86mf30eqsbosu7mkfn3pl3dutv037if.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1KzYDhn9Y7X_VltsL4xkh6X-nJZx6iR4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "760562010684-m86mf30eqsbosu7mkfn3pl3dutv037if.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "760562010684-mcgfui8p8bqm02a34h93tfi4b1aetfpp.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.bouncetower.bounceTower"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:760562010684:android:5120201efc97f2c9655139",
         "android_client_info": {
           "package_name": "com.bouncetower.bounce_tower"
