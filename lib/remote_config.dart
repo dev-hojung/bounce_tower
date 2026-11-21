@@ -9,7 +9,8 @@ class RemoteConfigService {
   /// 원격 미설정 시 사용할 기본값. 값의 **런타임 타입이 파싱 기준**이므로
   /// (int/double/bool) 타입을 바꿀 때는 [_coerce]도 함께 확인할 것.
   static const Map<String, dynamic> _defaults = {
-    'interstitial_gap_sec': 45, // 전면광고 최소 간격(초) — 판수 정책 위의 백스톱
+    // 전면광고 최소 간격(초). 회사 광고 원칙상 180초 미만 불가 — 범위·AdPolicy 양쪽에서 막는다.
+    'interstitial_gap_sec': 180,
     'interstitial_every_runs': 3, // 전면광고를 M판마다 1회
     'first_runs_no_ads': 3, // 첫 N판은 전면광고 없음(첫인상 보호)
     'danger_max': 0.42, // 최대 위험 발판 비율 — 웹 P.dangerMax
@@ -21,7 +22,7 @@ class RemoteConfigService {
 
   /// 각 키의 허용 범위 (min, max). bool·미등재 키는 클램프하지 않는다.
   static const Map<String, List<num>> _bounds = {
-    'interstitial_gap_sec': [15, 600],
+    'interstitial_gap_sec': [180, 600],
     'interstitial_every_runs': [1, 20],
     'first_runs_no_ads': [0, 50],
     'danger_max': [0.0, 0.8],

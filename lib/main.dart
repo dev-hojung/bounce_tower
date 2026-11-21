@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import 'ad_policy.dart';
 import 'ads.dart';
 import 'analytics.dart';
 import 'firebase_options.dart';
@@ -20,6 +22,9 @@ final InAppLocalhostServer _localhostServer =
 /// 지표·크래시 수집. main()에서 Firebase 초기화 직후 켜고, 이후 브리지가 쓴다.
 final AnalyticsService _analytics = AnalyticsService();
 
+/// 광고 정책 게이트. SharedPreferences 실패 시 null → 전면 광고를 띄우지 않는다.
+AdPolicy? _adPolicy;
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -29,6 +34,15 @@ Future<void> main() async {
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
   await MobileAds.instance.initialize();
+
+  // 광고 정책 게이트: 세션 수 집계(첫 세션에는 전면 광고 없음).
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    _adPolicy = AdPolicy(prefs);
+    await _adPolicy!.onColdStart();
+  } catch (e) {
+    debugPrint('AdPolicy 초기화 실패(전면 광고 비활성): $e');
+  }
 
   // Firebase는 **여기서 한 번만** 초기화한다(RankingService는 이걸 재사용).
   // 크래시 핸들러를 runApp 이전에 걸어야 초기 프레임 예외까지 잡힌다.
@@ -72,14 +86,34 @@ class GameScreen extends StatefulWidget {
   State<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> {
+class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   final AdManager _ads = AdManager();
   final RankingService _ranking = RankingService();
   final RemoteConfigService _config = RemoteConfigService();
+  InAppWebViewController? _web;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _adPolicy?.onBackground();
+    } else if (state == AppLifecycleState.resumed) {
+      _adPolicy?.onForeground();
+    }
+  }
+
+  /// 광고가 화면을 덮는 동안 웹 게임 루프·사운드를 멈추고, 닫히면 다시 켠다.
+  void _webCall(String fn) {
+    _web?.evaluateJavascript(source: 'window.$fn && window.$fn();');
+  }
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _ads.policy = _adPolicy;
+    _ads.log.sink = (name, params) => _analytics.logEvent(name, params);
+    _ads.onFullscreenShow = () => _webCall('btAdPause');
+    _ads.onFullscreenHide = () => _webCall('btAdResume');
     // ATT(iOS): 앱이 활성화된 뒤 추적 동의를 요청하고, 그 다음 광고를 프리로드.
     WidgetsBinding.instance.addPostFrameCallback((_) => _initTrackingThenAds());
   }
@@ -96,6 +130,10 @@ class _GameScreenState extends State<GameScreen> {
     } catch (_) {
       // Android 등 ATT 미지원 플랫폼은 무시
     }
+    // UMP 동의(EEA·영국) — 동의 절차가 끝난 뒤에만 광고를 요청한다.
+    try {
+      await _ads.gatherConsent();
+    } catch (_) {}
     _ads.preloadAll();
 
     // 리텐션 로컬 알림 (출석/복귀)
@@ -113,7 +151,8 @@ class _GameScreenState extends State<GameScreen> {
     // 실패해도 기본값이 남으므로 게임 동작에는 영향 없음.
     try {
       await _config.init();
-      _ads.interstitialMinGap = _config.interstitialGap;
+      // 180초 미만 값은 AdPolicy가 무시한다(AC-B3).
+      _adPolicy?.cooldown = _config.interstitialGap;
     } catch (_) {}
   }
 
@@ -126,6 +165,7 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _ads.dispose();
     super.dispose();
   }
@@ -154,11 +194,34 @@ class _GameScreenState extends State<GameScreen> {
           ),
           onWebViewCreated: (controller) {
             // ── JS → Dart 브리지 핸들러 등록 (index.html 브리지 스크립트와 짝) ──
+            // 규격: docs/bridge.md
+            _web = controller;
 
-            // 보상형 광고: true(보상완료) | 'noad'(광고없음→지급) | false(중도종료)
+            // 보상형 광고: true(보상완료) | false(중도종료·중복호출) | 'noad'(광고없음, 보상 없음)
+            // callHandler('showRewarded', placement)
             controller.addJavaScriptHandler(
               handlerName: 'showRewarded',
-              callback: (args) => _ads.showRewarded(),
+              callback: (args) => _ads.showRewarded(
+                  placement: args.isNotEmpty ? '${args[0]}' : 'revive'),
+            );
+
+            // 보상형 버튼 노출 여부 — 로드된 광고가 없으면 버튼을 숨긴다(AC-B7).
+            controller.addJavaScriptHandler(
+              handlerName: 'isRewardedReady',
+              callback: (args) => _ads.isRewardedReady(),
+            );
+
+            // UMP: 설정의 "광고 동의 다시 설정" 노출 여부 / 실행 (AC-B16)
+            controller.addJavaScriptHandler(
+              handlerName: 'privacyOptionsRequired',
+              callback: (args) => _ads.privacyOptionsRequired(),
+            );
+            controller.addJavaScriptHandler(
+              handlerName: 'showPrivacyOptions',
+              callback: (args) async {
+                await _ads.showPrivacyOptions();
+                return null;
+              },
             );
 
             // 전면 광고: 게임 종료 후 다시하기/홈 전환 시.

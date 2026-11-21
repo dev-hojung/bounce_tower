@@ -357,6 +357,7 @@
     <div class="err" id="acctErr"></div>
     <div class="acts"><button class="btn ghost" id="acctClose">닫기</button></div>
     <div class="skip" id="acctLinks"><a id="acctSignOut">로그아웃</a><span id="acctSep"> &nbsp;·&nbsp; </span><a id="acctDelete" class="danger">계정 삭제</a></div>
+    <div class="skip" id="acctPrivacyRow" style="display:none"><a id="acctPrivacy">광고 개인정보 설정</a></div>
     <div class="confirm" id="acctConfirm">
       랭킹 기록과 클라우드 세이브가 <b>영구 삭제</b>되고 연결이 해제돼요. 이 기기의 진행도는 남아요.
       <button class="btn" id="acctDeleteGo">정말 삭제할래요</button>
@@ -1011,7 +1012,21 @@ function gameOver() {
   $('reviveItemBtn').style.display = (rv > 0 && !reviveUsed) ? '' : 'none';
   $('reviveItemBtn').textContent = '🎟️ 부활권 사용 (' + rv + ')';
   $('doubleBtn').disabled = false;
+  $('doubleBtn').style.display = '';
   coinMult = 1;
+  // 네이티브: 보상형 광고가 로드돼 있지 않으면 광고 버튼을 숨긴다(비활성·스피너 없음).
+  // 광고 없이 보상을 주지 않으므로, 못 보는 버튼을 보여주지 않는 것이 정책상 안전하다.
+  if (nativeBridge()) {
+    $('reviveBtn').style.display = 'none';
+    $('doubleBtn').style.display = 'none';
+    try {
+      window.flutter_inappwebview.callHandler('isRewardedReady').then(function (ready) {
+        if (state !== 'over' || ready !== true) return;
+        if (!reviveUsed) { $('reviveBtn').style.display = ''; logEv('continue_offered', {}); }
+        if (!committed) $('doubleBtn').style.display = '';
+      }).catch(function () {});
+    } catch (e) {}
+  }
   logEv('game_over', { score: score, depth: runDepth, combo_max: runMaxCombo });
   setTimeout(() => { if (state === 'over') showScreen('over'); }, 450); // 사망 연출 잠깐 보여주고
 }
@@ -1047,12 +1062,17 @@ function revive() {
   // reviveUsed는 **성공했을 때만** 세운다 — 중도 종료했는데 부활권을 쓴 것으로
   // 처리되면 다시 시도할 수 없다.
   showAdGuarded(() => {
+    if (reviveUsed || state !== 'over') return;   // 한 판 1회 — 중복 콜백 방어
     reviveUsed = true;
     lives = 1; renderLives(); hitInvuln = 2.0;
     vy = P.bounce; ball.visible = true;
     state = 'playing'; showScreen(null);
     logEv('revive', { source: 'ad' });
-  }, () => toast('광고를 끝까지 봐야 부활할 수 있어요'));
+    logEv('continue_used', {});
+  }, (res) => {
+    if (res === 'noad') { $('reviveBtn').style.display = 'none'; toast('광고를 불러오지 못했어요'); }
+    else toast('광고를 끝까지 봐야 부활할 수 있어요');
+  }, 'revive');
 }
 function reviveWithItem() {
   if ((SAVE.items.revive || 0) <= 0) return;
@@ -1500,6 +1520,9 @@ function shouldShowInterstitial() {
   if (!nativeBridge() || !window.showInterstitialNative) return false;
   // 첫 N판은 무조건 광고 없음 — 첫인상 보호(D1 리텐션 직결)
   if ((SAVE.stats.games || 0) <= RC.firstRunsNoAds) return false;
+  // 보상형으로 이어 한 판의 종료 시점에는 전면 광고 없음(AC-B10)
+  if (reviveUsed) return false;
+  // 첫 세션·180초 쿨다운은 네이티브 AdPolicy가 최종 판단한다.
   return (SAVE.runsSinceAd || 0) >= RC.interstitialEveryRuns;
 }
 
@@ -1508,10 +1531,12 @@ function shouldShowInterstitial() {
 let adInFlight = false;
 
 // 보상형 광고 + adInFlight 관리. 성공/취소 어느 쪽이든 플래그를 내린다.
-function showAdGuarded(cb, onCancel) {
+// 이미 광고가 떠 있으면(연타) 무시한다 — 보상 중복 방지(네이티브도 한 번 더 막는다).
+function showAdGuarded(cb, onCancel, placement) {
+  if (adInFlight) return;
   adInFlight = true;
-  const wrap = (f) => () => { adInFlight = false; f && f(); };
-  showAd(wrap(cb), wrap(onCancel));
+  const wrap = (f) => (res) => { adInFlight = false; f && f(res); };
+  showAd(wrap(cb), wrap(onCancel), placement);
 }
 
 // 전면광고를 띄우고 **닫힌 뒤에** cb를 실행한다. 노출 조건이 아니면 즉시 실행.
@@ -1667,6 +1692,13 @@ function openAcctModal(hint) {
   renderAcct();
   $('acctmodal').classList.add('show');
   fetchAccountState().then(renderAcct);   // 최신 상태로 한 번 더
+  // UMP: EEA·영국 등 동의 대상 지역이면 "광고 개인정보 설정"(동의 다시 설정)을 노출
+  $('acctPrivacyRow').style.display = 'none';
+  try {
+    window.flutter_inappwebview.callHandler('privacyOptionsRequired')
+      .then(function (req) { $('acctPrivacyRow').style.display = req === true ? '' : 'none'; })
+      .catch(function () {});
+  } catch (e) {}
 }
 function closeAcctModal() { $('acctmodal').classList.remove('show'); _acctHint = ''; }
 async function acctLink(provider) {
@@ -1816,6 +1848,10 @@ $('acctSignOut').onclick = () => { SFX.ui(); acctSignOut(); };
 $('acctDelete').onclick = () => { SFX.ui(); $('acctConfirm').classList.toggle('show'); };   // 1단계: 경고 펼침
 $('acctDeleteGo').onclick = () => { SFX.ui(); acctDelete(); };                               // 2단계: 실제 삭제
 $('reviveItemBtn').onclick = () => reviveWithItem();
+$('acctPrivacy').onclick = () => {
+  SFX.ui();
+  try { window.flutter_inappwebview.callHandler('showPrivacyOptions'); } catch (e) {}
+};
 // 상점/랭킹이 같은 .shoptab 스타일을 공유하므로 셀렉터를 화면별로 좁힌다
 document.querySelectorAll('#shop .shoptab').forEach(tab => tab.onclick = () => {
   document.querySelectorAll('#shop .shoptab').forEach(t => t.classList.remove('active'));
@@ -1829,8 +1865,12 @@ document.querySelectorAll('#rankTabs .shoptab').forEach(tab => tab.onclick = () 
 });
 
 // 정산 → (조건이면) 전면광고 → 광고가 닫힌 뒤에 다음 화면으로.
-$('retryBtn').onclick = () => { commitRun(); showInterstitialThen(startGame); };
+$('retryBtn').onclick = () => {
+  if (!reviveUsed) logEv('continue_declined', { action: 'retry' });
+  commitRun(); showInterstitialThen(startGame);
+};
 $('homeBtn').onclick = () => {
+  if (!reviveUsed) logEv('continue_declined', { action: 'home' });
   commitRun();
   showInterstitialThen(() => { state = 'home'; showScreen('home'); });
 };
@@ -1844,7 +1884,10 @@ $('doubleBtn').onclick = () => {
     $('doubleBtn').disabled = true;
     toast('코인 2배 적용!');
     logEv('coin_double', { source: 'ad', coins: earned });
-  }, () => toast('광고를 끝까지 봐야 코인 2배를 받을 수 있어요'));
+  }, (res) => {
+    if (res === 'noad') { $('doubleBtn').style.display = 'none'; toast('광고를 불러오지 못했어요'); }
+    else toast('광고를 끝까지 봐야 코인 2배를 받을 수 있어요');
+  }, 'coin_double');
 };
 
 // ───────────── 백그라운드 전환 처리 ─────────────
@@ -1906,13 +1949,26 @@ requestAnimationFrame(animate);
   var hasBridge = !!(window.flutter_inappwebview && window.flutter_inappwebview.callHandler);
   window.BT_NATIVE = hasBridge;
   if (!hasBridge) return;
-  // 보상형: true(보상완료)/'noad'(광고없음)면 cb, false(중도종료)면 onCancel.
+  // 보상형: true(끝까지 시청)일 때만 cb. false(중도종료·중복)·'noad'(광고없음/표시실패)는
+  // onCancel(res) — 광고 없이 보상을 주지 않는다(업무 #18, docs/bridge.md).
   // onCancel이 없으면 사용자는 아무 반응도 못 본다 → 호출측이 반드시 넘길 것.
-  window.showAd = function (cb, onCancel) {
-    window.flutter_inappwebview.callHandler("showRewarded").then(function (res) {
-      if (res === true || res === "noad") { cb && cb(); }
-      else { onCancel && onCancel(); }
-    }).catch(function () { cb && cb(); });
+  window.showAd = function (cb, onCancel, placement) {
+    window.flutter_inappwebview.callHandler("showRewarded", placement || "revive").then(function (res) {
+      if (res === true) { cb && cb(res); }
+      else { onCancel && onCancel(res); }
+    }).catch(function () { onCancel && onCancel("noad"); });
+  };
+
+  // 전면/보상형 광고가 화면을 덮는 동안 게임 루프·사운드 정지, 닫히면 재개.
+  var _adPausedPlay = false;
+  window.btAdPause = function () {
+    try { if (actx && actx.state === 'running') actx.suspend(); } catch (e) {}
+    if (state === 'playing') { state = 'paused'; _adPausedPlay = true; }
+  };
+  window.btAdResume = function () {
+    try { if (actx && actx.state === 'suspended' && soundOn) actx.resume(); } catch (e) {}
+    if (_adPausedPlay && state === 'paused') { prev = performance.now(); state = 'playing'; }
+    _adPausedPlay = false;
   };
 
   // 전면: 광고가 **닫힌 뒤** resolve되는 Promise를 그대로 넘긴다.

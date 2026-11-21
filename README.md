@@ -11,7 +11,8 @@ Helix Jump 스타일 캐주얼 게임. **Three.js 웹 프로토타입을 Flutter
 ```
 lib/
   main.dart              # 앱 진입점. 로컬 HTTP 서버 기동 + 풀스크린 InAppWebView + 브리지 등록
-  ads.dart               # AdManager: 전면/보상형 광고 로드·노출·빈도제한
+  ads.dart               # AdManager: 전면/보상형 광고 로드·노출 + UMP 동의 + 광고 계측
+  ad_policy.dart         # AdPolicy: 첫 세션 금지·180초 쿨다운·세션 집계 (Strike Log와 공통 규격)
   ranking.dart           # RankingService: 익명 인증 + 계정 연결(Google/Apple) + 전체/시즌 랭킹 + 클라우드 세이브
   remote_config.dart     # RemoteConfigService: 밸런스·광고빈도·시즌 원격 조정
   notifications.dart     # NotificationService: 출석·복귀·주간마감 로컬 알림
@@ -41,8 +42,12 @@ assets/www/
 
 | JS 호출 | Dart 핸들러 | 용도 |
 |---|---|---|
-| `showRewarded()` → `Promise` | `AdManager.showRewarded()` | 부활 / 코인 2배 (보상형). `true`=보상완료, `'noad'`=광고없음(지급), `false`=중도종료 |
-| `showInterstitial()` | `AdManager.maybeShowInterstitial()` | 게임오버 후 다시하기/홈 전환 시 전면광고. 기본 45초 빈도제한(Remote Config로 조정) |
+| `showRewarded(placement)` → `Promise` | `AdManager.showRewarded()` | 부활 / 코인 2배 (보상형). `true`=보상완료일 때만 지급. `'noad'`(광고없음)·`false`(중도종료)는 **지급 안 함** |
+| `isRewardedReady()` | `AdManager.isRewardedReady()` | 게임오버 시 광고 버튼 노출 여부(미로드면 숨김) |
+| `showInterstitial()` | `AdManager.maybeShowInterstitial()` | 게임오버 후 다시하기/홈 전환 시 전면광고. `AdPolicy`: 첫 세션 금지 + 최소 180초 |
+| `privacyOptionsRequired()` / `showPrivacyOptions()` | `AdManager` | UMP 광고 동의 다시 설정(계정 모달) |
+
+> 광고 브리지 상세 규격·시퀀스: **`docs/bridge.md`**
 | `setAdFree()` | `AdManager.adFree = true` | **dormant** — 광고 전용 모델이라 호출되지 않음 |
 | `submitScore(best, name, seasonBest)` | `RankingService.submitScore` | 전체 랭킹 + 현재 시즌 랭킹에 최고점 제출 |
 | `getLeaderboard(myBest)` | `RankingService.getLeaderboard` | 전체 상위 100 + 내 순위 (미설정 시 `null` → 목업) |
@@ -64,7 +69,7 @@ assets/www/
 실제 AdMob 계정 ID로 바꾸지 않으면 수익이 발생하지 않으며, 개발 중 실광고 클릭은
 계정 정지 위험이 있다.
 
-- `lib/ads.dart` → `_AdUnits.interstitial`, `_AdUnits.rewarded` (Android/iOS 각각)
+- `lib/ads.dart` → `_AdUnits._release*` 상수 (Android/iOS 각각). debug/profile은 항상 테스트 ID
 - `android/app/src/main/AndroidManifest.xml` → `com.google.android.gms.ads.APPLICATION_ID`
 - `ios/Runner/Info.plist` → `GADApplicationIdentifier`
 
@@ -104,7 +109,7 @@ cd tool/webtest && npm i && node run.mjs
 |---|---|---|---|
 | `first_runs_no_ads` | 3 | 0~50 | **첫 N판은 전면광고 없음**(첫인상 보호) |
 | `interstitial_every_runs` | 3 | 1~20 | 그 이후 M판마다 전면광고 1회 |
-| `interstitial_gap_sec` | 45 | 15~600 | 전면광고 최소 간격(초) — 판수 정책 위의 백스톱 |
+| `interstitial_gap_sec` | 180 | 180~600 | 전면광고 최소 간격(초). 회사 원칙상 180초 미만 불가(`AdPolicy`도 이중 차단) |
 | `danger_max` | 0.42 | 0~0.8 | 최대 위험 발판 비율 |
 | `rage_combo` | 5 | 2~30 | RAGE(무적) 발동 콤보 |
 | `coin_mult` | 1.0 | 0.5~10 | 코인 획득 배율(이벤트용) |
