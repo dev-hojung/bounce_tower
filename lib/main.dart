@@ -1,5 +1,6 @@
 import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -18,6 +19,11 @@ import 'remote_config.dart';
 /// 그대로 동작하도록 localhost로 서빙한다.
 final InAppLocalhostServer _localhostServer =
     InAppLocalhostServer(documentRoot: 'assets/www', port: 8080);
+
+/// 게임 페이지 URL. debug 빌드에서만 `?dev=1`을 붙여 개발용 튜닝 패널을 연다.
+/// profile·release 빌드(출시 후보·홍보 녹화용)에서는 패널이 아예 표시되지 않는다.
+String gameUrl({required bool debug}) =>
+    'http://localhost:8080/index.html${debug ? '?dev=1' : ''}';
 
 /// 지표·크래시 수집. main()에서 Firebase 초기화 직후 켜고, 이후 브리지가 쓴다.
 final AnalyticsService _analytics = AnalyticsService();
@@ -179,8 +185,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
         top: false,
         bottom: false,
         child: InAppWebView(
-          initialUrlRequest:
-              URLRequest(url: WebUri('http://localhost:8080/index.html')),
+          initialUrlRequest: URLRequest(url: WebUri(gameUrl(debug: kDebugMode))),
           initialSettings: InAppWebViewSettings(
             transparentBackground: true,
             mediaPlaybackRequiresUserGesture: false,

@@ -1,3 +1,5 @@
+import 'dart:ui' show Locale, PlatformDispatcher;
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
@@ -55,16 +57,23 @@ class NotificationService {
     }
   }
 
-  static const NotificationDetails _details = NotificationDetails(
-    android: AndroidNotificationDetails(
-      'bt_reminders',
-      '리마인더',
-      channelDescription: '출석·복귀 알림',
-      importance: Importance.defaultImportance,
-      priority: Priority.defaultPriority,
-    ),
-    iOS: DarwinNotificationDetails(),
-  );
+  /// 알림 문구 언어: 기기 언어가 한국어면 한국어, 그 밖에는 영어(기본).
+  /// 웹(index.html)의 LANG 판정과 같은 규칙.
+  static bool isKorean(Locale locale) => locale.languageCode == 'ko';
+  static String _t(String en, String ko) =>
+      isKorean(PlatformDispatcher.instance.locale) ? ko : en;
+
+  static NotificationDetails get _details => NotificationDetails(
+        android: AndroidNotificationDetails(
+          'bt_reminders',
+          _t('Reminders', '리마인더'),
+          channelDescription:
+              _t('Daily reward and comeback reminders', '출석·복귀 알림'),
+          importance: Importance.defaultImportance,
+          priority: Priority.defaultPriority,
+        ),
+        iOS: const DarwinNotificationDetails(),
+      );
 
   /// 앱 실행 때마다 호출: 기존 예약을 갱신(복귀 타이머 리셋).
   static Future<void> scheduleReminders() async {
@@ -74,8 +83,8 @@ class NotificationService {
     // 매일 저녁 7시 출석 리마인더 (반복)
     await _plugin.zonedSchedule(
       id: 1,
-      title: '오늘의 출석 보상이 도착했어요 🎁',
-      body: '연속 출석 보너스를 받아가세요!',
+      title: _t('Your daily reward is here 🎁', '오늘의 출석 보상이 도착했어요 🎁'),
+      body: _t('Claim your streak bonus!', '연속 출석 보너스를 받아가세요!'),
       scheduledDate: _nextInstanceOfHour(19),
       notificationDetails: _details,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
@@ -85,8 +94,8 @@ class NotificationService {
     // 2일 미접속 시 복귀 유도 (앱 켤 때마다 리셋됨)
     await _plugin.zonedSchedule(
       id: 2,
-      title: '타워가 당신을 기다려요 🗼',
-      body: 'BEST 점수를 갱신해볼까요?',
+      title: _t('The tower is waiting for you 🗼', '타워가 당신을 기다려요 🗼'),
+      body: _t('Ready to beat your BEST score?', 'BEST 점수를 갱신해볼까요?'),
       scheduledDate: tz.TZDateTime.now(tz.local).add(const Duration(days: 2)),
       notificationDetails: _details,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
@@ -95,8 +104,9 @@ class NotificationService {
     // 주간 미션 마감 임박 — 일요일 저녁 8시 (주간 리셋은 웹의 weekStr() 기준)
     await _plugin.zonedSchedule(
       id: 3,
-      title: '주간 미션 마감 임박! ⏰',
-      body: '이번 주 보상을 놓치기 전에 받아가세요.',
+      title: _t('Weekly missions end soon! ⏰', '주간 미션 마감 임박! ⏰'),
+      body: _t("Claim this week's rewards before they're gone.",
+          '이번 주 보상을 놓치기 전에 받아가세요.'),
       scheduledDate: _nextWeekdayHour(DateTime.sunday, 20),
       notificationDetails: _details,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
-<title>바운스 타워 — Phase 2 프로토타입</title>
+<title>Bounce Tower</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a14; font-family: -apple-system, system-ui, sans-serif; }
@@ -221,32 +221,33 @@
   <div id="combo"></div>
   <div id="depth">DEPTH 0</div>
 </div>
-<div id="hint">드래그해서 타워를 돌리세요 ↻</div>
+<!-- 다국어: 기본 텍스트는 영어. data-ko(텍스트/HTML)·data-ko-ph(placeholder)는 한국어 로케일에서 applyStaticI18n()이 교체한다. -->
+<div id="hint" data-ko="드래그해서 타워를 돌리세요 ↻">Drag to spin the tower ↻</div>
 
 <!-- 홈 -->
 <div id="home" class="screen show">
   <div class="top" style="justify-content:space-between"><span class="chip" id="homeNick" style="color:#fff;cursor:pointer">👤 Player</span><span class="chip" id="homeCoins">🪙 0</span></div>
   <div class="center">
     <div class="title">BOUNCE<br>TOWER</div>
-    <div class="sub">드래그로 타워를 돌려 틈으로 떨어지세요</div>
+    <div class="sub" data-ko="드래그로 타워를 돌려 틈으로 떨어지세요">Spin the tower and drop through the gaps</div>
     <div class="homebest" id="homeBest">BEST 0</div>
   </div>
   <div style="width:100%;max-width:460px;display:flex;flex-direction:column;gap:16px;align-items:center">
     <div class="howto">
-      <h3>게임 방법</h3>
+      <h3 data-ko="게임 방법">HOW TO PLAY</h3>
       <ul>
-        <li><span>👆</span><div><b>드래그</b>로 타워를 좌우로 돌려요</div></li>
-        <li><span>🕳️</span><div>빈틈에 맞춰 공을 <b>아래로 통과</b>시켜요</div></li>
-        <li><span>🟥</span><div><b>빨간 발판</b>은 위험 — 닿으면 목숨이 깎여요</div></li>
-        <li><span>🔥</span><div>연속 통과로 <b>콤보</b>를 쌓으면 잠깐 <b>무적</b>!</div></li>
-        <li><span>❤️</span><div>목숨 <b>3개</b>, 더 깊이 내려갈수록 고득점</div></li>
+        <li><span>👆</span><div data-ko="&lt;b&gt;드래그&lt;/b&gt;로 타워를 좌우로 돌려요"><b>Drag</b> to spin the tower left and right</div></li>
+        <li><span>🕳️</span><div data-ko="빈틈에 맞춰 공을 &lt;b&gt;아래로 통과&lt;/b&gt;시켜요">Line up a gap and <b>drop the ball through</b></div></li>
+        <li><span>🟥</span><div data-ko="&lt;b&gt;빨간 발판&lt;/b&gt;은 위험 — 닿으면 목숨이 깎여요"><b>Red tiles</b> are dangerous — touching one costs a life</div></li>
+        <li><span>🔥</span><div data-ko="연속 통과로 &lt;b&gt;콤보&lt;/b&gt;를 쌓으면 잠깐 &lt;b&gt;무적&lt;/b&gt;!">Chain drops into a <b>combo</b> to go <b>RAGE</b> mode!</div></li>
+        <li><span>❤️</span><div data-ko="목숨 &lt;b&gt;3개&lt;/b&gt;, 더 깊이 내려갈수록 고득점"><b>3 lives</b> — the deeper you go, the higher you score</div></li>
       </ul>
     </div>
-    <button class="btn" id="playBtn" style="width:100%;max-width:320px">▶ 플레이</button>
+    <button class="btn" id="playBtn" style="width:100%;max-width:320px" data-ko="▶ 플레이">▶ PLAY</button>
     <div class="tabs">
-      <div class="tab" id="tabShop"><span class="ic">🛍️</span>상점</div>
-      <div class="tab" id="tabDaily"><span class="ic">🎁</span>데일리<span id="dailyBadge"></span></div>
-      <div class="tab" id="tabRank"><span class="ic">🏆</span>랭킹</div>
+      <div class="tab" id="tabShop"><span class="ic">🛍️</span><span data-ko="상점">Shop</span></div>
+      <div class="tab" id="tabDaily"><span class="ic">🎁</span><span data-ko="데일리">Daily</span><span id="dailyBadge"></span></div>
+      <div class="tab" id="tabRank"><span class="ic">🏆</span><span data-ko="랭킹">Ranking</span></div>
     </div>
   </div>
 </div>
@@ -258,12 +259,12 @@
   <div class="best" id="bestScore">BEST 0</div>
   <div class="earn" id="earnCoins">+0 🪙</div>
   <div class="btns">
-    <button class="btn" id="reviveItemBtn" style="display:none">🎟️ 부활권 사용</button>
-    <button class="btn ad" id="reviveBtn">🎬 광고 보고 부활</button>
-    <button class="btn ad" id="doubleBtn">🎬 코인 2배 받기</button>
+    <button class="btn" id="reviveItemBtn" style="display:none">🎟️ Use Revive Ticket</button>
+    <button class="btn ad" id="reviveBtn" data-ko="🎬 광고 보고 부활">🎬 Watch Ad to Revive</button>
+    <button class="btn ad" id="doubleBtn" data-ko="🎬 코인 2배 받기">🎬 Watch Ad for 2× Coins</button>
     <div class="row2">
-      <button class="btn" id="retryBtn">다시 하기</button>
-      <button class="btn ghost" id="homeBtn">🏠 홈</button>
+      <button class="btn" id="retryBtn" data-ko="다시 하기">Retry</button>
+      <button class="btn ghost" id="homeBtn" data-ko="🏠 홈">🏠 Home</button>
     </div>
   </div>
 </div>
@@ -271,56 +272,56 @@
 <!-- 상점 -->
 <div id="shop" class="screen">
   <div class="topbar">
-    <h2 style="margin:0">🛍️ 상점</h2>
+    <h2 style="margin:0" data-ko="🛍️ 상점">🛍️ Shop</h2>
     <div style="display:flex;gap:8px">
       <span class="chip" id="shopCoins">🪙 0</span>
     </div>
   </div>
   <div class="shoptabs">
-    <div class="shoptab active" data-cat="skin">공</div>
-    <div class="shoptab" data-cat="trail">트레일</div>
-    <div class="shoptab" data-cat="theme">배경</div>
-    <div class="shoptab" data-cat="item">소모품</div>
+    <div class="shoptab active" data-cat="skin" data-ko="공">Balls</div>
+    <div class="shoptab" data-cat="trail" data-ko="트레일">Trails</div>
+    <div class="shoptab" data-cat="theme" data-ko="배경">Themes</div>
+    <div class="shoptab" data-cat="item" data-ko="소모품">Items</div>
   </div>
   <div class="scroll">
     <div class="skins" id="skinGrid"></div>
   </div>
-  <button class="btn ghost" id="shopClose" style="margin-top:12px">닫기</button>
+  <button class="btn ghost" id="shopClose" style="margin-top:12px" data-ko="닫기">Close</button>
 </div>
 
 <!-- 데일리 -->
 <div id="daily" class="screen">
-  <div class="topbar"><h2 style="margin:0">🎁 데일리</h2>
+  <div class="topbar"><h2 style="margin:0" data-ko="🎁 데일리">🎁 Daily</h2>
     <div style="display:flex;gap:8px">
       <span class="chip" id="dailyCoins">🪙 0</span>
     </div>
   </div>
   <div class="dailybox">
-    <div class="streak" id="dailyStreak">🔥 연속 출석 0일</div>
+    <div class="streak" id="dailyStreak">🔥 0-day streak</div>
     <div class="daygrid" id="dayGrid"></div>
-    <button class="btn" id="claimDaily">출석 보상 받기</button>
+    <button class="btn" id="claimDaily">Claim Daily Reward</button>
   </div>
   <div class="scroll" id="missionList"></div>
-  <button class="btn ghost" id="dailyClose" style="margin-top:12px">닫기</button>
+  <button class="btn ghost" id="dailyClose" style="margin-top:12px" data-ko="닫기">Close</button>
 </div>
 
 <!-- 랭킹 -->
 <div id="rank" class="screen">
-  <div class="topbar"><h2 style="margin:0">🏆 랭킹</h2><span class="closeX" id="rankClose">×</span></div>
+  <div class="topbar"><h2 style="margin:0" data-ko="🏆 랭킹">🏆 Ranking</h2><span class="closeX" id="rankClose">×</span></div>
   <div class="shoptabs" id="rankTabs">
-    <div class="shoptab active" data-rank="all">전체</div>
-    <div class="shoptab" data-rank="season">🏅 시즌</div>
+    <div class="shoptab active" data-rank="all" data-ko="전체">All-time</div>
+    <div class="shoptab" data-rank="season" data-ko="🏅 시즌">🏅 Season</div>
   </div>
   <div class="tier" id="tierBox"></div>
   <div class="scroll" id="rankList"></div>
 </div>
 
-<!-- 광고 목업 -->
+<!-- 광고 목업 (브라우저 전용, 네이티브에서는 쓰이지 않음) -->
 <div id="admodal">
-  <div class="adlabel">AD · 프로토타입 목업</div>
+  <div class="adlabel">AD · MOCKUP</div>
   <div class="adbody">
     <div class="adbig">🎬</div>
-    <div>광고 재생 중…</div>
+    <div data-ko="광고 재생 중…">Ad playing…</div>
     <div class="adcnt" id="adcnt">3</div>
   </div>
 </div>
@@ -328,39 +329,39 @@
 <!-- 닉네임 설정 -->
 <div id="nickmodal">
   <div class="card">
-    <h3>닉네임 설정</h3>
-    <input id="nickInput" type="text" maxlength="12" placeholder="닉네임" autocomplete="off" spellcheck="false" />
-    <div class="nickmeta"><span class="hintnm">한글·영문·숫자 2~12자</span><span class="cnt" id="nickCount">0/12</span></div>
+    <h3 data-ko="닉네임 설정">Set Nickname</h3>
+    <input id="nickInput" type="text" maxlength="12" placeholder="Nickname" data-ko-ph="닉네임" autocomplete="off" spellcheck="false" />
+    <div class="nickmeta"><span class="hintnm" data-ko="한글·영문·숫자 2~12자">2–12 letters or numbers</span><span class="cnt" id="nickCount">0/12</span></div>
     <div class="err" id="nickErr"></div>
     <div class="acts">
-      <button class="btn ghost" id="nickCancel">취소</button>
-      <button class="btn" id="nickSave">저장</button>
+      <button class="btn ghost" id="nickCancel" data-ko="취소">Cancel</button>
+      <button class="btn" id="nickSave" data-ko="저장">Save</button>
     </div>
-    <div class="skip"><a id="nickSkip">나중에 하기</a></div>
-    <div class="skip" id="nickAcctRow" style="display:none"><a id="nickAcct">☁️ 계정 연결로 기록 지키기</a></div>
+    <div class="skip"><a id="nickSkip" data-ko="나중에 하기">Maybe later</a></div>
+    <div class="skip" id="nickAcctRow" style="display:none"><a id="nickAcct">☁️ Link account to keep your records</a></div>
   </div>
 </div>
 
 <!-- 계정 연결 (Google/Apple) — 네이티브 전용. 설계: 바운스타워_닉네임계정설계.md Phase 2 -->
 <div id="acctmodal">
   <div class="card">
-    <h3>☁️ 계정</h3>
+    <h3 data-ko="☁️ 계정">☁️ Account</h3>
     <div class="status" id="acctStatus"></div>
     <button class="sso google" id="acctGoogle">
       <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-      <span>Google로 계속하기</span>
+      <span>Continue with Google</span>
     </button>
     <button class="sso apple" id="acctApple">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>
-      <span>Apple로 로그인</span>
+      <span>Sign in with Apple</span>
     </button>
     <div class="err" id="acctErr"></div>
-    <div class="acts"><button class="btn ghost" id="acctClose">닫기</button></div>
-    <div class="skip" id="acctLinks"><a id="acctSignOut">로그아웃</a><span id="acctSep"> &nbsp;·&nbsp; </span><a id="acctDelete" class="danger">계정 삭제</a></div>
-    <div class="skip" id="acctPrivacyRow" style="display:none"><a id="acctPrivacy">광고 개인정보 설정</a></div>
+    <div class="acts"><button class="btn ghost" id="acctClose" data-ko="닫기">Close</button></div>
+    <div class="skip" id="acctLinks"><a id="acctSignOut" data-ko="로그아웃">Sign out</a><span id="acctSep"> &nbsp;·&nbsp; </span><a id="acctDelete" class="danger" data-ko="계정 삭제">Delete account</a></div>
+    <div class="skip" id="acctPrivacyRow" style="display:none"><a id="acctPrivacy" data-ko="광고 개인정보 설정">Ad privacy settings</a></div>
     <div class="confirm" id="acctConfirm">
-      랭킹 기록과 클라우드 세이브가 <b>영구 삭제</b>되고 연결이 해제돼요. 이 기기의 진행도는 남아요.
-      <button class="btn" id="acctDeleteGo">정말 삭제할래요</button>
+      <span data-ko="랭킹 기록과 클라우드 세이브가 &lt;b&gt;영구 삭제&lt;/b&gt;되고 연결이 해제돼요. 이 기기의 진행도는 남아요.">Your ranking records and cloud save will be <b>permanently deleted</b>. Progress on this device stays.</span>
+      <button class="btn" id="acctDeleteGo" data-ko="정말 삭제할래요">Yes, delete it</button>
     </div>
   </div>
 </div>
@@ -369,13 +370,14 @@
 
 <!-- 튜닝 패널 -->
 <div id="panel" class="hide">
-  <div class="grip" id="grip">⚙ 손맛 튜닝</div>
-  <div class="row"><button id="rageTest" class="miniBtn" style="width:100%;padding:10px;font-size:13px">🔥 무적 테스트 (즉시 발동)</button></div>
-  <div class="row"><label>중력</label><input id="s_grav" type="range" min="20" max="90" step="1"><span class="val" id="v_grav"></span></div>
-  <div class="row"><label>튕김 힘</label><input id="s_bounce" type="range" min="8" max="30" step="0.5"><span class="val" id="v_bounce"></span></div>
-  <div class="row"><label>회전 감도</label><input id="s_rot" type="range" min="0.002" max="0.02" step="0.001"><span class="val" id="v_rot"></span></div>
-  <div class="row"><label>위험 비율</label><input id="s_danger" type="range" min="0" max="0.6" step="0.02"><span class="val" id="v_danger"></span></div>
-  <div class="row"><label>링 간격</label><input id="s_gap" type="range" min="1.6" max="3.2" step="0.1"><span class="val" id="v_gap"></span></div>
+  <!-- 개발 전용(DEV_TOOLS). 출시 빌드에서는 표시되지 않는다. -->
+  <div class="grip" id="grip">⚙ DEV TUNING</div>
+  <div class="row"><button id="rageTest" class="miniBtn" style="width:100%;padding:10px;font-size:13px">🔥 RAGE test (instant)</button></div>
+  <div class="row"><label>Gravity</label><input id="s_grav" type="range" min="20" max="90" step="1"><span class="val" id="v_grav"></span></div>
+  <div class="row"><label>Bounce</label><input id="s_bounce" type="range" min="8" max="30" step="0.5"><span class="val" id="v_bounce"></span></div>
+  <div class="row"><label>Rotate speed</label><input id="s_rot" type="range" min="0.002" max="0.02" step="0.001"><span class="val" id="v_rot"></span></div>
+  <div class="row"><label>Danger ratio</label><input id="s_danger" type="range" min="0" max="0.6" step="0.02"><span class="val" id="v_danger"></span></div>
+  <div class="row"><label>Ring spacing</label><input id="s_gap" type="range" min="1.6" max="3.2" step="0.1"><span class="val" id="v_gap"></span></div>
 </div>
 
 <script src="vendor/three.min.js"></script>
@@ -394,8 +396,31 @@
 //  코어(물리·무적·목숨) + 메타(코인·상점·스킨·데일리·미션·랭킹·광고목업)
 // ============================================================
 
+// ---- 다국어 (영어 기본 + 한국어) ----
+// 기기 언어가 ko*이면 한국어, 그 밖에는 모두 영어. ?lang=ko|en 으로 강제할 수 있다(녹화·QA용).
+const LANG = (function () {
+  try {
+    const q = new URLSearchParams(location.search).get('lang');
+    if (q === 'ko' || q === 'en') return q;
+  } catch (e) {}
+  const langs = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language || 'en'];
+  return String(langs[0] || 'en').toLowerCase().startsWith('ko') ? 'ko' : 'en';
+})();
+const L = (en, ko) => (LANG === 'ko' ? ko : en);
+// HTML의 data-ko / data-ko-ph(placeholder)를 한국어 로케일에서만 교체한다.
+function applyStaticI18n() {
+  document.documentElement.lang = LANG;
+  if (LANG !== 'ko') return;
+  document.querySelectorAll('[data-ko]').forEach(el => { el.innerHTML = el.getAttribute('data-ko'); });
+  document.querySelectorAll('[data-ko-ph]').forEach(el => { el.placeholder = el.getAttribute('data-ko-ph'); });
+}
+applyStaticI18n();
+
+// 개발용 튜닝 패널: ?dev=1 로 열었을 때만(네이티브는 debug 빌드에서만 붙인다 — lib/main.dart).
+const DEV_TOOLS = (function () { try { return new URLSearchParams(location.search).get('dev') === '1'; } catch (e) { return false; } })();
+
 // ---- 튜닝 파라미터 ----
-const P = { gravity: 48, bounce: 19, rotateSpeed: 0.008, dangerMax: 0.42, ringSpacing: 2.2 };
+const P ={ gravity: 48, bounce: 19, rotateSpeed: 0.008, dangerMax: 0.42, ringSpacing: 2.2 };
 
 const N_SLOTS = 12, SLOT_ANG = (Math.PI * 2) / N_SLOTS;
 const R_INNER = 1.7, R_OUTER = 3.1, R_MID = (R_INNER + R_OUTER) / 2, BALL_R = 0.55;
@@ -421,56 +446,56 @@ function seasonId() { return 'S' + seasonIndex(); }
 function seasonEndMs() { return SEASON_EPOCH_MS + SEASON_MS * (seasonIndex() + 1); }
 function seasonLeftText() {
   const ms = seasonEndMs() - Date.now();
-  if (ms <= 0) return '곧 종료';
+  if (ms <= 0) return L('Ending soon', '곧 종료');
   const d = Math.floor(ms / 86400000), h = Math.floor(ms / 3600000) % 24;
-  return d > 0 ? (d + '일 ' + h + '시간 남음') : (h + '시간 남음');
+  return d > 0 ? L(d + 'd ' + h + 'h left', d + '일 ' + h + '시간 남음') : L(h + 'h left', h + '시간 남음');
 }
 
 // ---- 스킨 정의 ----
 const SKINS = [
-  { id: 'classic', name: '클래식', price: 0,   color: 0xff5c8d, emissive: 0x551025 },
-  { id: 'aqua',    name: '아쿠아', price: 50,  color: 0x4dd2ff, emissive: 0x0a3550 },
-  { id: 'lime',    name: '라임',   price: 90,  color: 0x4dffa0, emissive: 0x0a5030 },
-  { id: 'gold',    name: '골드',   price: 160, color: 0xffd84d, emissive: 0x554010 },
-  { id: 'violet',  name: '바이올렛', price: 160, color: 0x7c5cff, emissive: 0x2a1a55 },
-  { id: 'shadow',  name: '섀도우', price: 300, color: 0x1a1a2e, emissive: 0x000000 },
-  { id: 'rainbow', name: '레인보우', price: 600, color: 0xffffff, emissive: 0x222222, rainbow: true },
+  { id: 'classic', name: L('Classic', '클래식'), price: 0,   color: 0xff5c8d, emissive: 0x551025 },
+  { id: 'aqua',    name: L('Aqua', '아쿠아'), price: 50,  color: 0x4dd2ff, emissive: 0x0a3550 },
+  { id: 'lime',    name: L('Lime', '라임'),   price: 90,  color: 0x4dffa0, emissive: 0x0a5030 },
+  { id: 'gold',    name: L('Gold', '골드'),   price: 160, color: 0xffd84d, emissive: 0x554010 },
+  { id: 'violet',  name: L('Violet', '바이올렛'), price: 160, color: 0x7c5cff, emissive: 0x2a1a55 },
+  { id: 'shadow',  name: L('Shadow', '섀도우'), price: 300, color: 0x1a1a2e, emissive: 0x000000 },
+  { id: 'rainbow', name: L('Rainbow', '레인보우'), price: 600, color: 0xffffff, emissive: 0x222222, rainbow: true },
 ];
 
 // ---- 시즌 한정 스킨 ----  시즌마다 1종만 로테이션 노출.
 // 코인으로 살 수 없고, **그 시즌 최고점이 RC.seasonGoal 이상**이면 해금된다.
 // 시즌이 지나면 획득 경로가 사라짐(한정) — 이미 가진 스킨은 영구 보유·장착 가능.
 const SEASON_SKINS = [
-  { id: 'sea_nebula', name: '네뷸라',   price: -1, color: 0x9c6bff, emissive: 0x3a1a6e, season: true },
-  { id: 'sea_ember',  name: '엠버',     price: -1, color: 0xff6a2b, emissive: 0x551505, season: true },
-  { id: 'sea_frost',  name: '프로스트', price: -1, color: 0x9fe8ff, emissive: 0x123a55, season: true },
+  { id: 'sea_nebula', name: L('Nebula', '네뷸라'),   price: -1, color: 0x9c6bff, emissive: 0x3a1a6e, season: true },
+  { id: 'sea_ember',  name: L('Ember', '엠버'),     price: -1, color: 0xff6a2b, emissive: 0x551505, season: true },
+  { id: 'sea_frost',  name: L('Frost', '프로스트'), price: -1, color: 0x9fe8ff, emissive: 0x123a55, season: true },
 ];
 function seasonSkin() { return SEASON_SKINS[seasonIndex() % SEASON_SKINS.length]; }
 function allSkins() { return SKINS.concat(SEASON_SKINS); }
 
 // ---- 트레일 이펙트 (공 잔상) ----  color:null = 공 색을 따라감
 const TRAILS = [
-  { id: 'basic',    name: '기본',   price: 0,   color: null,     width: 0.62, life: 0.40, opacity: 0.65 },
-  { id: 'star',     name: '별가루', price: 80,  color: 0xfff1a8, width: 0.46, life: 0.55, opacity: 0.75 },
-  { id: 'flame',    name: '불꽃',   price: 120, color: 0xff6a2b, width: 0.72, life: 0.42, opacity: 0.85 },
-  { id: 'neon',     name: '네온',   price: 180, color: 0x35f0ff, width: 0.6,  life: 0.62, opacity: 0.8 },
-  { id: 'rainbowT', name: '무지개', price: 250, color: null,     width: 0.6,  life: 0.62, opacity: 0.8, rainbow: true },
+  { id: 'basic',    name: L('Basic', '기본'),   price: 0,   color: null,     width: 0.62, life: 0.40, opacity: 0.65 },
+  { id: 'star',     name: L('Stardust', '별가루'), price: 80,  color: 0xfff1a8, width: 0.46, life: 0.55, opacity: 0.75 },
+  { id: 'flame',    name: L('Flame', '불꽃'),   price: 120, color: 0xff6a2b, width: 0.72, life: 0.42, opacity: 0.85 },
+  { id: 'neon',     name: L('Neon', '네온'),   price: 180, color: 0x35f0ff, width: 0.6,  life: 0.62, opacity: 0.8 },
+  { id: 'rainbowT', name: L('Rainbow', '무지개'), price: 250, color: null,     width: 0.6,  life: 0.62, opacity: 0.8, rainbow: true },
 ];
 
 // ---- 배경 테마 (하늘 그라데이션 + 오로라 조명색) ----
 const THEMES = [
-  { id: 'aurora', name: '오로라',     price: 0,   top: 0x1f8f7a, mid: 0x3a1a6e, bot: 0x05030f, l1: 0x2fffc0, l2: 0x9c6bff },
-  { id: 'sunset', name: '석양',       price: 120, top: 0xff9e6b, mid: 0x7a2e6e, bot: 0x140312, l1: 0xff7a5c, l2: 0xffd84d },
-  { id: 'abyss',  name: '심해',       price: 150, top: 0x1a6fa8, mid: 0x0a2a55, bot: 0x01030a, l1: 0x2fa8ff, l2: 0x1f4f9c },
-  { id: 'cyber',  name: '사이버펑크', price: 220, top: 0xff2bd0, mid: 0x2a1a6e, bot: 0x05030f, l1: 0xff2bd0, l2: 0x2fffc0 },
-  { id: 'sakura', name: '벚꽃',       price: 220, top: 0xffb7d5, mid: 0x7a4a8e, bot: 0x140a1a, l1: 0xffaad0, l2: 0xc08cff },
+  { id: 'aurora', name: L('Aurora', '오로라'),     price: 0,   top: 0x1f8f7a, mid: 0x3a1a6e, bot: 0x05030f, l1: 0x2fffc0, l2: 0x9c6bff },
+  { id: 'sunset', name: L('Sunset', '석양'),       price: 120, top: 0xff9e6b, mid: 0x7a2e6e, bot: 0x140312, l1: 0xff7a5c, l2: 0xffd84d },
+  { id: 'abyss',  name: L('Abyss', '심해'),       price: 150, top: 0x1a6fa8, mid: 0x0a2a55, bot: 0x01030a, l1: 0x2fa8ff, l2: 0x1f4f9c },
+  { id: 'cyber',  name: L('Cyberpunk', '사이버펑크'), price: 220, top: 0xff2bd0, mid: 0x2a1a6e, bot: 0x05030f, l1: 0xff2bd0, l2: 0x2fffc0 },
+  { id: 'sakura', name: L('Sakura', '벚꽃'),       price: 220, top: 0xffb7d5, mid: 0x7a4a8e, bot: 0x140a1a, l1: 0xffaad0, l2: 0xc08cff },
 ];
 
 // ---- 소모품 ----
 const CONSUMABLES = [
-  { id: 'revive',  name: '부활권',     price: 80,  icon: '🎟️', desc: '사망 시 1회 즉시 부활(광고 없이)' },
-  { id: 'booster', name: '코인 부스터', price: 120, icon: '💰', desc: '다음 3판 코인 2배' },
-  { id: 'shield',  name: '시작 보호막', price: 60,  icon: '🛡️', desc: '이번 판 첫 피격 1회 무효' },
+  { id: 'revive',  name: L('Revive Ticket', '부활권'),     price: 80,  icon: '🎟️', desc: L('Revive once instantly — no ad', '사망 시 1회 즉시 부활(광고 없이)') },
+  { id: 'booster', name: L('Coin Booster', '코인 부스터'), price: 120, icon: '💰', desc: L('2× coins for your next 3 runs', '다음 3판 코인 2배') },
+  { id: 'shield',  name: L('Start Shield', '시작 보호막'), price: 60,  icon: '🛡️', desc: L('Blocks the first hit of a run', '이번 판 첫 피격 1회 무효') },
 ];
 
 // ---- 7일 출석 보상 사이클 ----
@@ -486,12 +511,12 @@ const DAILY_REWARDS = [
 
 // ---- 업적 (평생, 1회 보상) ----  stat: 통계 키 / skins=보유 스킨 수
 const ACHIEVEMENTS = [
-  { id: 'depth50',  name: '깊이 50 도달',   stat: 'bestDepth', target: 50,  reward: { coin: 50 } },
-  { id: 'combo15',  name: '15 콤보 달성',   stat: 'bestCombo', target: 15,  reward: { coin: 50 } },
-  { id: 'rage10',   name: '무적 10회 발동', stat: 'rages',     target: 10,  reward: { coin: 50 } },
-  { id: 'depth100', name: '깊이 100 도달',  stat: 'bestDepth', target: 100, reward: { coin: 100 } },
-  { id: 'games50',  name: '50판 플레이',    stat: 'games',     target: 50,  reward: { coin: 100 } },
-  { id: 'skins5',   name: '스킨 5종 보유',  stat: 'skins',     target: 5,   reward: { coin: 100 } },
+  { id: 'depth50',  name: L('Reach depth 50', '깊이 50 도달'),   stat: 'bestDepth', target: 50,  reward: { coin: 50 } },
+  { id: 'combo15',  name: L('Hit a 15 combo', '15 콤보 달성'),   stat: 'bestCombo', target: 15,  reward: { coin: 50 } },
+  { id: 'rage10',   name: L('Trigger RAGE 10 times', '무적 10회 발동'), stat: 'rages',     target: 10,  reward: { coin: 50 } },
+  { id: 'depth100', name: L('Reach depth 100', '깊이 100 도달'),  stat: 'bestDepth', target: 100, reward: { coin: 100 } },
+  { id: 'games50',  name: L('Play 50 games', '50판 플레이'),    stat: 'games',     target: 50,  reward: { coin: 100 } },
+  { id: 'skins5',   name: L('Own 5 skins', '스킨 5종 보유'),  stat: 'skins',     target: 5,   reward: { coin: 100 } },
 ];
 
 const hexStr = c => '#' + c.toString(16).padStart(6, '0');
@@ -859,7 +884,7 @@ function showScreen(name) {
   if (name === 'home') flushLinkPrompt();
   elHud.classList.toggle('show', name === null);
   elHint.classList.toggle('show', name === null && !started);
-  $('panel').classList.toggle('hide', name !== null);
+  $('panel').classList.toggle('hide', !DEV_TOOLS || name !== null);
 }
 
 function setupTower() {
@@ -895,7 +920,7 @@ function startGame() {
 function updateHUD() {
   elScore.textContent = score;
   elDepth.textContent = 'DEPTH ' + runDepth;
-  if (rageLeft > 0) { elCombo.textContent = '🔥 무적! ' + rageLeft; elCombo.classList.add('show', 'rage'); }
+  if (rageLeft > 0) { elCombo.textContent = L('🔥 RAGE! ', '🔥 무적! ') + rageLeft; elCombo.classList.add('show', 'rage'); }
   else if (combo >= 2) { elCombo.textContent = combo + ' COMBO'; elCombo.classList.add('show'); elCombo.classList.remove('rage'); }
   else elCombo.classList.remove('show', 'rage');
 }
@@ -950,7 +975,7 @@ function setRage(on) {
   point.color.setHex(on ? 0xff5c8d : sk.color);
   point.intensity = on ? 2.6 : 0.0;
   elRage.classList.toggle('on', on);
-  if (on) { SFX.rage(); shakeAmt = 0.5; burst(ball.position, 0xffd84d, 18, 1.5); toast('🔥 무적! 발판을 뚫고 강하!');
+  if (on) { SFX.rage(); shakeAmt = 0.5; burst(ball.position, 0xffd84d, 18, 1.5); toast(L('🔥 RAGE! Smash straight through!', '🔥 무적! 발판을 뚫고 강하!'));
             if (SAVE.stats) SAVE.stats.rages = (SAVE.stats.rages || 0) + 1; }
 }
 function recycleRings() {
@@ -969,8 +994,8 @@ function checkpoint(seg) {
   slowT = 0.45; shakeAmt = 0.4;
   burst(ball.position, 0xffd84d, 24, 2.0);
   SFX.rage();
-  toast('🏁 구간 ' + seg + ' 돌파! +25점');
-  popup('🏁 구간 ' + seg, 'big');
+  toast(L('🏁 Stage ' + seg + ' cleared! +25', '🏁 구간 ' + seg + ' 돌파! +25점'));
+  popup(L('🏁 Stage ', '🏁 구간 ') + seg, 'big');
 }
 // 점수/콤보 플로팅 팝업 (공 위치를 화면 좌표로 투영)
 function popup(text, cls) {
@@ -1010,7 +1035,7 @@ function gameOver() {
   $('reviveBtn').style.display = reviveUsed ? 'none' : '';
   const rv = SAVE.items.revive || 0;
   $('reviveItemBtn').style.display = (rv > 0 && !reviveUsed) ? '' : 'none';
-  $('reviveItemBtn').textContent = '🎟️ 부활권 사용 (' + rv + ')';
+  $('reviveItemBtn').textContent = L('🎟️ Use Revive Ticket (', '🎟️ 부활권 사용 (') + rv + ')';
   $('doubleBtn').disabled = false;
   $('doubleBtn').style.display = '';
   coinMult = 1;
@@ -1070,8 +1095,8 @@ function revive() {
     logEv('revive', { source: 'ad' });
     logEv('continue_used', {});
   }, (res) => {
-    if (res === 'noad') { $('reviveBtn').style.display = 'none'; toast('광고를 불러오지 못했어요'); }
-    else toast('광고를 끝까지 봐야 부활할 수 있어요');
+    if (res === 'noad') { $('reviveBtn').style.display = 'none'; toast(L('No ad available right now', '광고를 불러오지 못했어요')); }
+    else toast(L('Watch the full ad to revive', '광고를 끝까지 봐야 부활할 수 있어요'));
   }, 'revive');
 }
 function reviveWithItem() {
@@ -1080,7 +1105,7 @@ function reviveWithItem() {
   lives = 1; renderLives(); hitInvuln = 2.0;
   vy = P.bounce; ball.visible = true;
   state = 'playing'; showScreen(null);
-  toast('🎟️ 부활권 사용!');
+  toast(L('🎟️ Revive Ticket used!', '🎟️ 부활권 사용!'));
   logEv('revive', { source: 'item' });
 }
 
@@ -1149,7 +1174,7 @@ function physics(dt) {
           SAVE.items.shield--; shieldReady = false; save();
           breakSlot(r, j.idx); r.passed = true; onPass();
           hitInvuln = HIT_INVULN; squash = 0.18; shakeAmt = 0.4;
-          SFX.bounce(); toast('🛡️ 보호막이 막았다!'); updateHUD();
+          SFX.bounce(); toast(L('🛡️ Shield blocked the hit!', '🛡️ 보호막이 막았다!')); updateHUD();
         }
         else {
           breakSlot(r, j.idx);            // 밟은 빨간 발판 깨짐 연출
@@ -1304,6 +1329,8 @@ function priceTag(price) {
   return SAVE.coins >= price ? '<div class="st buy">🪙 ' + price + '</div>'
                             : '<div class="st lock">🔒 ' + price + '</div>';
 }
+function stEquipped() { return '<div class="st eq">' + L('Equipped', '장착 중') + '</div>'; }
+function stEquip() { return '<div class="st own">' + L('Equip', '장착하기') + '</div>'; }
 // '공' 탭 목록 = 기본 스킨 + 이번 시즌 한정 스킨 + 이미 획득한 지난 시즌 스킨.
 // (지난 시즌 미획득 스킨은 노출하지 않는다 — 획득 경로가 없으므로)
 function shopSkinList() {
@@ -1321,8 +1348,8 @@ function skinCard(sk) {
   const owned = SAVE.ownedSkins.includes(sk.id), eq = SAVE.equipped === sk.id;
   const card = document.createElement('div');
   card.className = 'skin' + (eq ? ' equipped' : '');
-  const st = eq ? '<div class="st eq">장착 중</div>'
-           : owned ? '<div class="st own">장착하기</div>'
+  const st = eq ? stEquipped()
+           : owned ? stEquip()
            // 시즌 스킨은 구매 불가 → 가격 대신 시즌 최고점 진행도를 보여준다
            : sk.season ? '<div class="st lock">🏅 ' + Math.min(SAVE.season.best, RC.seasonGoal) + '/' + RC.seasonGoal + '</div>'
            : priceTag(sk.price);
@@ -1335,7 +1362,7 @@ function trailCard(tr) {
   const owned = SAVE.ownedTrails.includes(tr.id), eq = SAVE.equippedTrail === tr.id;
   const card = document.createElement('div');
   card.className = 'skin' + (eq ? ' equipped' : '');
-  const st = eq ? '<div class="st eq">장착 중</div>' : owned ? '<div class="st own">장착하기</div>' : priceTag(tr.price);
+  const st = eq ? stEquipped() : owned ? stEquip() : priceTag(tr.price);
   const col = tr.rainbow ? 'linear-gradient(90deg,red,orange,yellow,lime,cyan,violet)'
             : tr.color != null ? hexStr(tr.color) : 'linear-gradient(90deg,#ff5c8d,rgba(255,92,141,0))';
   const prev = '<div class="ball" style="height:18px;width:84%;border-radius:9px;margin:8px auto 10px;background:' + col + '"></div>';
@@ -1347,7 +1374,7 @@ function themeCard(th) {
   const owned = SAVE.ownedThemes.includes(th.id), eq = SAVE.equippedTheme === th.id;
   const card = document.createElement('div');
   card.className = 'skin' + (eq ? ' equipped' : '');
-  const st = eq ? '<div class="st eq">장착 중</div>' : owned ? '<div class="st own">장착하기</div>' : priceTag(th.price);
+  const st = eq ? stEquipped() : owned ? stEquip() : priceTag(th.price);
   const col = 'linear-gradient(180deg,' + hexStr(th.top) + ',' + hexStr(th.mid) + ',' + hexStr(th.bot) + ')';
   const prev = '<div class="ball" style="border-radius:12px;background:' + col + '"></div>';
   card.innerHTML = prev + '<div class="nm">' + th.name + '</div>' + st;
@@ -1357,51 +1384,55 @@ function themeCard(th) {
 function itemCard(it) {
   const card = document.createElement('div');
   card.className = 'skin';
-  const have = it.id === 'booster' ? SAVE.boosterRuns + '판' : (SAVE.items[it.id] || 0) + '개';
+  const have = it.id === 'booster' ? SAVE.boosterRuns + L(' runs', '판') : (SAVE.items[it.id] || 0) + L('', '개');
   card.innerHTML = '<div class="ball" style="background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:26px">' + it.icon + '</div>'
     + '<div class="nm">' + it.name + '</div>'
     + '<div class="pct" style="font-size:11px;margin:3px 0 4px">' + it.desc + '</div>'
-    + '<div class="st own">보유 ' + have + '</div>' + priceTag(it.price);
+    + '<div class="st own">' + L('Owned: ', '보유 ') + have + '</div>' + priceTag(it.price);
   card.onclick = () => onBuyItem(it);
   return card;
 }
 function onSkinTap(sk) {
   if (SAVE.ownedSkins.includes(sk.id)) {
-    SAVE.equipped = sk.id; save(); setRage(false); renderShop(); toast(sk.name + ' 장착!');
+    SAVE.equipped = sk.id; save(); setRage(false); renderShop(); toast(L(sk.name + ' equipped!', sk.name + ' 장착!'));
   } else if (sk.season) {
-    toast('시즌 ' + RC.seasonGoal + '점 달성 시 해금 (현재 ' + SAVE.season.best + ')');
+    toast(L('Score ' + RC.seasonGoal + ' this season to unlock (now ' + SAVE.season.best + ')',
+            '시즌 ' + RC.seasonGoal + '점 달성 시 해금 (현재 ' + SAVE.season.best + ')'));
   } else if (SAVE.coins >= sk.price) {
     SAVE.coins -= sk.price; SAVE.ownedSkins.push(sk.id); SAVE.equipped = sk.id;
-    save(); setRage(false); renderShop(); refreshMeta(); toast(sk.name + ' 구매 & 장착!');
+    save(); setRage(false); renderShop(); refreshMeta(); toast(L(sk.name + ' bought & equipped!', sk.name + ' 구매 & 장착!'));
     logEv('shop_buy', { item: sk.id, kind: 'skin', price: sk.price });
     queueLinkPrompt('shop');
-  } else { toast('코인이 부족해요 (🪙 ' + sk.price + ')'); }
+  } else { toast(notEnoughCoins(sk.price)); }
 }
 function onBuyEquip(kind, it) {
   const ownedArr = kind === 'trail' ? SAVE.ownedTrails : SAVE.ownedThemes;
   const setEq = id => { if (kind === 'trail') SAVE.equippedTrail = id; else SAVE.equippedTheme = id; };
   if (ownedArr.includes(it.id)) {
-    setEq(it.id); save(); if (kind === 'theme') applyTheme(); renderShop(); toast(it.name + ' 장착!');
+    setEq(it.id); save(); if (kind === 'theme') applyTheme(); renderShop(); toast(L(it.name + ' equipped!', it.name + ' 장착!'));
   } else if (SAVE.coins >= it.price) {
     SAVE.coins -= it.price; ownedArr.push(it.id); setEq(it.id); save();
-    if (kind === 'theme') applyTheme(); renderShop(); refreshMeta(); toast(it.name + ' 구매 & 장착!');
+    if (kind === 'theme') applyTheme(); renderShop(); refreshMeta(); toast(L(it.name + ' bought & equipped!', it.name + ' 구매 & 장착!'));
     logEv('shop_buy', { item: it.id, kind: kind, price: it.price });
     queueLinkPrompt('shop');
-  } else { toast('코인이 부족해요 (🪙 ' + it.price + ')'); }
+  } else { toast(notEnoughCoins(it.price)); }
 }
+function notEnoughCoins(price) { return L('Not enough coins (🪙 ' + price + ')', '코인이 부족해요 (🪙 ' + price + ')'); }
 function onBuyItem(it) {
-  if (SAVE.coins < it.price) { toast('코인이 부족해요 (🪙 ' + it.price + ')'); return; }
+  if (SAVE.coins < it.price) { toast(notEnoughCoins(it.price)); return; }
   SAVE.coins -= it.price;
   if (it.id === 'booster') SAVE.boosterRuns += 3;
   else SAVE.items[it.id] = (SAVE.items[it.id] || 0) + 1;
   save(); renderShop(); refreshMeta();
-  toast(it.name + ' 구매!');
+  toast(L(it.name + ' purchased!', it.name + ' 구매!'));
   logEv('shop_buy', { item: it.id, kind: 'item', price: it.price });
   queueLinkPrompt('shop');
 }
 
 // ----- 미션 (일일 / 주간 / 업적) -----
-const MLABELS = { combo: '한 판 콤보', depth: '깊이 도달', coins: '코인 모으기', games: '플레이 횟수' };
+const MLABELS = LANG === 'ko'
+  ? { combo: '한 판 콤보', depth: '깊이 도달', coins: '코인 모으기', games: '플레이 횟수' }
+  : { combo: 'Combo in one run:', depth: 'Reach depth', coins: 'Collect coins:', games: 'Play games:' };
 function missionDone(i) { const m = SAVE.missions.defs[i], pr = SAVE.missions.prog; return pr[m.type] >= m.target; }
 function weeklyDone(i) { const m = SAVE.weekly.defs[i], pr = SAVE.weekly.prog; return pr[m.type] >= m.target; }
 function achvVal(a) { return a.stat === 'skins' ? SAVE.ownedSkins.length : (SAVE.stats[a.stat] || 0); }
@@ -1415,25 +1446,25 @@ function missionRow(title, cur, target, claimed, rewardLabel, claimable, onClaim
     '<div class="pct">' + Math.min(cur, target) + ' / ' + target + '</div></div>' +
     '<div class="act"></div>';
   const act = row.querySelector('.act');
-  if (claimed) act.innerHTML = '<span class="reward">완료 ✓</span>';
-  else if (claimable) { const b = document.createElement('button'); b.className = 'miniBtn'; b.textContent = rewardLabel + ' 받기'; b.onclick = onClaim; act.appendChild(b); }
+  if (claimed) act.innerHTML = '<span class="reward">' + L('Done ✓', '완료 ✓') + '</span>';
+  else if (claimable) { const b = document.createElement('button'); b.className = 'miniBtn'; b.textContent = L('Claim ' + rewardLabel, rewardLabel + ' 받기'); b.onclick = onClaim; act.appendChild(b); }
   else act.innerHTML = '<span class="reward">' + rewardLabel + '</span>';
   return row;
 }
 function renderMissions() {
   const list = $('missionList'); list.innerHTML = '';
 
-  list.insertAdjacentHTML('beforeend', '<div class="msec">오늘의 미션<span class="sub">매일 초기화</span></div>');
+  list.insertAdjacentHTML('beforeend', '<div class="msec">' + L('Daily Missions', '오늘의 미션') + '<span class="sub">' + L('Resets daily', '매일 초기화') + '</span></div>');
   SAVE.missions.defs.forEach((m, i) => list.appendChild(missionRow(
     MLABELS[m.type] + ' ' + m.target, SAVE.missions.prog[m.type], m.target, m.claimed, '+' + m.reward + ' 🪙', missionDone(i) && !m.claimed,
-    () => { if (missionDone(i) && !m.claimed) { m.claimed = true; SAVE.coins += m.reward; save(); renderMissions(); refreshMeta(); SFX.coin(); toast('+' + m.reward + ' 🪙 획득!'); logEv('mission_claim', { type: 'daily' }); askNotifPermissionOnce(); } })));
+    () => { if (missionDone(i) && !m.claimed) { m.claimed = true; SAVE.coins += m.reward; save(); renderMissions(); refreshMeta(); SFX.coin(); toast('+' + m.reward + L(' 🪙 earned!', ' 🪙 획득!')); logEv('mission_claim', { type: 'daily' }); askNotifPermissionOnce(); } })));
 
-  list.insertAdjacentHTML('beforeend', '<div class="msec">주간 미션<span class="sub">매주 초기화</span></div>');
+  list.insertAdjacentHTML('beforeend', '<div class="msec">' + L('Weekly Missions', '주간 미션') + '<span class="sub">' + L('Resets weekly', '매주 초기화') + '</span></div>');
   SAVE.weekly.defs.forEach((m, i) => list.appendChild(missionRow(
     MLABELS[m.type] + ' ' + m.target, SAVE.weekly.prog[m.type], m.target, m.claimed, '+' + m.reward + ' 🪙', weeklyDone(i) && !m.claimed,
-    () => { if (weeklyDone(i) && !m.claimed) { m.claimed = true; SAVE.coins += m.reward; save(); renderMissions(); refreshMeta(); SFX.coin(); toast('+' + m.reward + ' 🪙 획득!'); logEv('mission_claim', { type: 'weekly' }); askNotifPermissionOnce(); } })));
+    () => { if (weeklyDone(i) && !m.claimed) { m.claimed = true; SAVE.coins += m.reward; save(); renderMissions(); refreshMeta(); SFX.coin(); toast('+' + m.reward + L(' 🪙 earned!', ' 🪙 획득!')); logEv('mission_claim', { type: 'weekly' }); askNotifPermissionOnce(); } })));
 
-  list.insertAdjacentHTML('beforeend', '<div class="msec">업적<span class="sub">평생 1회</span></div>');
+  list.insertAdjacentHTML('beforeend', '<div class="msec">' + L('Achievements', '업적') + '<span class="sub">' + L('One-time', '평생 1회') + '</span></div>');
   ACHIEVEMENTS.forEach(a => list.appendChild(missionRow(
     a.name, achvVal(a), a.target, !!SAVE.achvClaimed[a.id], '+' + a.reward.coin + ' 🪙', achvVal(a) >= a.target && !SAVE.achvClaimed[a.id],
     () => { if (achvVal(a) >= a.target && !SAVE.achvClaimed[a.id]) { SAVE.achvClaimed[a.id] = true; SAVE.coins += a.reward.coin; save(); renderMissions(); refreshMeta(); SFX.coin(); toast('🏆 ' + a.name + '! +' + a.reward.coin + '🪙'); logEv('mission_claim', { type: 'achv', id: a.id }); askNotifPermissionOnce(); } })));
@@ -1461,18 +1492,19 @@ function rewardShort(rw) {
 function renderDaily() {
   const canClaim = SAVE.daily.last !== todayStr();
   const streak = SAVE.daily.streak, todayIdx = streak % 7;
-  $('dailyStreak').textContent = '🔥 연속 출석 ' + streak + '일';
+  $('dailyStreak').textContent = L('🔥 ' + streak + '-day streak', '🔥 연속 출석 ' + streak + '일');
   const grid = $('dayGrid'); grid.innerHTML = '';
   for (let i = 0; i < 7; i++) {
     const rw = DAILY_REWARDS[i];
     const claimed = i < todayIdx, isToday = (i === todayIdx);
     const cell = document.createElement('div');
     cell.className = 'daycell' + (claimed ? ' done' : '') + (isToday && canClaim ? ' today' : '');
-    cell.innerHTML = '<div class="dl">' + (i + 1) + '일</div><div class="di">' + rewardIcon(rw) + '</div><div class="dv">' + rewardShort(rw) + '</div>' + (claimed ? '<div class="dc">✓</div>' : '');
+    cell.innerHTML = '<div class="dl">' + L('Day ' + (i + 1), (i + 1) + '일') + '</div><div class="di">' + rewardIcon(rw) + '</div><div class="dv">' + rewardShort(rw) + '</div>' + (claimed ? '<div class="dc">✓</div>' : '');
     grid.appendChild(cell);
   }
   $('claimDaily').disabled = !canClaim;
-  $('claimDaily').textContent = canClaim ? (todayIdx + 1) + '일차 보상 받기' : '오늘 받음 ✓';
+  $('claimDaily').textContent = canClaim ? L('Claim Day ' + (todayIdx + 1) + ' Reward', (todayIdx + 1) + '일차 보상 받기')
+                                         : L('Claimed today ✓', '오늘 받음 ✓');
   renderMissions();
 }
 $('claimDaily').onclick = () => {
@@ -1481,7 +1513,7 @@ $('claimDaily').onclick = () => {
   const rw = DAILY_REWARDS[SAVE.daily.streak % 7];
   applyReward(rw);
   SAVE.daily.streak += 1; SAVE.daily.last = todayStr();
-  save(); renderDaily(); refreshMeta(); SFX.coin(); toast(rewardText(rw) + ' 출석 완료!');
+  save(); renderDaily(); refreshMeta(); SFX.coin(); toast(rewardText(rw) + L(' — checked in!', ' 출석 완료!'));
   logEv('daily_claim', { day: SAVE.daily.streak });
   askNotifPermissionOnce();   // 보상을 막 받은 지금이 알림 권한 요청 적기
 };
@@ -1568,7 +1600,7 @@ function checkSeasonSkin() {
   SAVE.ownedSkins.push(sk.id);
   queueLinkPrompt('season');
   // commitRun이 직전에 코인 효과음을 이미 냈으므로 여기선 토스트만.
-  toast('🏅 시즌 한정 스킨 «' + sk.name + '» 획득!');
+  toast(L('🏅 Season skin «' + sk.name + '» unlocked!', '🏅 시즌 한정 스킨 «' + sk.name + '» 획득!'));
   logEv('season_skin_unlock', { season: seasonIndex(), skin: sk.id, score: SAVE.season.best });
 }
 
@@ -1579,11 +1611,11 @@ const NICK_BAN = ['fuck', 'shit', 'bitch', 'asshole', 'nigger',
 function validateNick(raw) {
   const n = (raw || '').trim().replace(/\s+/g, ' ');
   if (!/^[가-힣A-Za-z0-9_ ]{2,12}$/.test(n)) {
-    return { ok: false, msg: '한글·영문·숫자 2~12자만 사용할 수 있어요' };
+    return { ok: false, msg: L('Use 2–12 letters or numbers', '한글·영문·숫자 2~12자만 사용할 수 있어요') };
   }
   const low = n.toLowerCase().replace(/\s/g, '');
   if (NICK_BAN.some(w => low.includes(w))) {
-    return { ok: false, msg: '사용할 수 없는 닉네임이에요' };
+    return { ok: false, msg: L("That nickname isn't allowed", '사용할 수 없는 닉네임이에요') };
   }
   return { ok: true, value: n };
 }
@@ -1593,7 +1625,7 @@ function openNickModal(firstRun) {
   $('nickCount').textContent = [...$('nickInput').value].length + '/12';
   $('nickSkip').style.display = firstRun ? '' : 'none';
   $('nickAcctRow').style.display = (!firstRun && nativeBridge()) ? '' : 'none';
-  $('nickAcct').textContent = ACCT_LINK_ENABLED ? '☁️ 계정 연결로 기록 지키기' : '⚙️ 계정 관리';
+  $('nickAcct').textContent = ACCT_LINK_ENABLED ? L('☁️ Link account to keep your records', '☁️ 계정 연결로 기록 지키기') : L('⚙️ Manage account', '⚙️ 계정 관리');
   $('nickCancel').style.display = firstRun ? 'none' : '';
   $('nickmodal').classList.add('show');
   setTimeout(() => { try { $('nickInput').focus(); } catch (e) {} }, 60);
@@ -1606,7 +1638,7 @@ function saveNick() {
   refreshMeta();
   closeNickModal();
   submitScoreNative();   // 네이티브면 scores/{uid}.name 즉시 갱신
-  toast('닉네임 저장: ' + r.value);
+  toast(L('Nickname saved: ', '닉네임 저장: ') + r.value);
 }
 // ---- 계정 연결 (Google/Apple) — 네이티브 전용 ----
 // 설계: 바운스타워_닉네임계정설계.md Phase 2. 브라우저에서는 전부 no-op.
@@ -1621,12 +1653,13 @@ let _acctHint = '';
 let _linkPromptQueued = ''; // 홈 복귀 시 띄울 권유 사유(광고·전환 화면과 겹치지 않게 지연)
 const ACCT_ERR = {
   cancelled: '',
-  'not-configured': '로그인 설정이 아직 준비되지 않았어요',
-  'already-linked': '이미 연결된 계정이에요',
-  'in-use-other-account': '이 계정은 이미 다른 기록에 연결돼 있어요. 로그아웃 후 그 계정으로 로그인해 주세요',
-  network: '네트워크 연결을 확인해 주세요',
-  disabled: '서버에 연결되지 않았어요',
-  'requires-recent-login': '보안을 위해 다시 로그인한 뒤 시도해 주세요',
+  'not-configured': L("Sign-in isn't set up yet", '로그인 설정이 아직 준비되지 않았어요'),
+  'already-linked': L('This account is already linked', '이미 연결된 계정이에요'),
+  'in-use-other-account': L('This account is linked to other records. Sign out, then sign in with that account.',
+                            '이 계정은 이미 다른 기록에 연결돼 있어요. 로그아웃 후 그 계정으로 로그인해 주세요'),
+  network: L('Check your network connection', '네트워크 연결을 확인해 주세요'),
+  disabled: L("Can't reach the server", '서버에 연결되지 않았어요'),
+  'requires-recent-login': L('For security, sign in again and retry', '보안을 위해 다시 로그인한 뒤 시도해 주세요'),
 };
 function acctLinked() { return !!(_acct && _acct.linked); }
 async function fetchAccountState() {
@@ -1653,17 +1686,20 @@ async function cloudResync() {
 }
 function acctErrText(code) {
   const m = ACCT_ERR[code];
-  return m === undefined ? ('실패했어요 (' + code + ')') : m;
+  return m === undefined ? (L('Something went wrong (', '실패했어요 (') + code + ')') : m;
 }
 function acctStatusHtml() {
   const head = _acctHint ? '<b>' + _acctHint + '</b><br>' : '';
-  if (!_acct || !_acct.enabled) return head + '서버에 연결되지 않았어요. 네트워크를 확인해 주세요.';
+  if (!_acct || !_acct.enabled) return head + L("Can't reach the server. Check your network.", '서버에 연결되지 않았어요. 네트워크를 확인해 주세요.');
   if (_acct.linked) {
     const names = (_acct.providers || []).map(p => p === 'google.com' ? 'Google' : p === 'apple.com' ? 'Apple' : p).join(' · ');
-    return head + '<b>' + names + '</b> 계정에 연결됨<br>재설치·기기 변경 후 같은 계정으로 로그인하면 기록이 복원돼요.';
+    return head + L('Linked to <b>' + names + '</b><br>Sign in with the same account after reinstalling or switching devices to restore your records.',
+                    '<b>' + names + '</b> 계정에 연결됨<br>재설치·기기 변경 후 같은 계정으로 로그인하면 기록이 복원돼요.');
   }
-  if (!ACCT_LINK_ENABLED) return head + '랭킹 기록과 진행도 백업은 이 기기의 익명 계정에 저장돼요.<br>계정을 삭제하면 서버에 저장된 기록이 모두 지워져요.';
-  return head + '지금은 기록이 이 기기에만 묶여 있어요.<br>계정을 연결하면 재설치·기기 변경 후에도 랭킹과 진행도가 복원돼요.';
+  if (!ACCT_LINK_ENABLED) return head + L('Your ranking records and progress backup are stored in an anonymous account on this device.<br>Deleting the account erases all records stored on the server.',
+                                          '랭킹 기록과 진행도 백업은 이 기기의 익명 계정에 저장돼요.<br>계정을 삭제하면 서버에 저장된 기록이 모두 지워져요.');
+  return head + L('Right now your records are tied to this device only.<br>Link an account to restore your ranking and progress after reinstalling or switching devices.',
+                  '지금은 기록이 이 기기에만 묶여 있어요.<br>계정을 연결하면 재설치·기기 변경 후에도 랭킹과 진행도가 복원돼요.');
 }
 function renderAcct() {
   $('acctStatus').innerHTML = acctStatusHtml();
@@ -1672,10 +1708,10 @@ function renderAcct() {
   const g = $('acctGoogle'), a = $('acctApple');
   const gOn = ps.includes('google.com'), aOn = ps.includes('apple.com');
   g.classList.toggle('done', gOn);
-  g.querySelector('span').textContent = gOn ? 'Google 연결됨 ✓' : 'Google로 계속하기';
+  g.querySelector('span').textContent = gOn ? L('Google linked ✓', 'Google 연결됨 ✓') : L('Continue with Google', 'Google로 계속하기');
   a.style.display = (_acct && _acct.appleAvailable) ? '' : 'none';   // Android Apple은 2차
   a.classList.toggle('done', aOn);
-  a.querySelector('span').textContent = aOn ? 'Apple 연결됨 ✓' : 'Apple로 로그인';
+  a.querySelector('span').textContent = aOn ? L('Apple linked ✓', 'Apple 연결됨 ✓') : L('Sign in with Apple', 'Apple로 로그인');
   g.disabled = a.disabled = !on || _acctBusy;
   if (!ACCT_LINK_ENABLED) g.style.display = a.style.display = 'none';
   // 삭제는 익명 계정도 가능해야 한다(Play 계정 삭제 정책). 로그아웃은 연결된 계정에만 의미가 있다.
@@ -1683,10 +1719,10 @@ function renderAcct() {
   $('acctSignOut').style.display = $('acctSep').style.display = showOut ? '' : 'none';
   $('acctLinks').style.display = (showOut || (on && !ACCT_LINK_ENABLED)) ? '' : 'none';
   $('acctConfirm').classList.remove('show');
-  $('acctErr').textContent = _acctBusy ? '잠시만요…' : '';
+  $('acctErr').textContent = _acctBusy ? L('One moment…', '잠시만요…') : '';
 }
 function openAcctModal(hint) {
-  if (!nativeBridge()) { toast('앱에서만 사용할 수 있어요'); return; }
+  if (!nativeBridge()) { toast(L('Available in the app only', '앱에서만 사용할 수 있어요')); return; }
   _acctHint = hint || '';
   closeNickModal();
   renderAcct();
@@ -1714,7 +1750,7 @@ async function acctLink(provider) {
     _acctHint = '';
     await cloudResync();        // switched면 다른 기기의 기록이 여기서 합쳐진다(max/union, 무손실)
     renderAcct();
-    toast(res.switched ? '☁️ 다른 기기의 기록과 합쳐졌어요' : '☁️ 계정이 연결됐어요');
+    toast(res.switched ? L('☁️ Merged with records from your other device', '☁️ 다른 기기의 기록과 합쳐졌어요') : L('☁️ Account linked', '☁️ 계정이 연결됐어요'));
   } else {
     await fetchAccountState();
     renderAcct();
@@ -1731,7 +1767,7 @@ async function acctSignOut() {
   logEv('account_signout', { ok: ok });
   await cloudResync();          // 새 익명 uid — 로컬은 그대로, 클라우드에 새로 백업된다
   renderAcct();
-  toast(ok ? '로그아웃했어요. 이 기기의 기록은 그대로예요' : '로그아웃에 실패했어요');
+  toast(ok ? L('Signed out. Records on this device are kept.', '로그아웃했어요. 이 기기의 기록은 그대로예요') : L('Sign-out failed', '로그아웃에 실패했어요'));
 }
 async function acctDelete() {
   if (_acctBusy) return;
@@ -1744,7 +1780,7 @@ async function acctDelete() {
     result: res.ok ? 'ok' : (res.error === 'cancelled' ? 'cancelled' : 'error') });
   await cloudResync();
   renderAcct();
-  if (res.ok) toast('계정을 삭제했어요. 이 기기의 진행도는 남아 있어요');
+  if (res.ok) toast(L('Account deleted. Progress on this device is kept.', '계정을 삭제했어요. 이 기기의 진행도는 남아 있어요'));
   else $('acctErr').textContent = res.error === 'cancelled' ? '' : acctErrText(res.error);
 }
 // 권유는 "잃으면 아까운 순간"(첫 상점 구매 / 시즌 스킨 획득 / 최고점 갱신)에 **1회만**.
@@ -1760,7 +1796,7 @@ function flushLinkPrompt() {
   if (SAVE.linkPrompted || !_cloudReady || !_cloudOn || acctLinked()) return;   // 오프라인·이미 연결이면 다음 기회에
   SAVE.linkPrompted = true; save();
   logEv('account_link_prompt', { reason: reason });
-  setTimeout(() => openAcctModal('🏅 소중한 기록이 생겼어요! 계정을 연결하면 잃지 않아요'), 500);
+  setTimeout(() => openAcctModal(L("🏅 That's a record worth keeping! Link an account so you never lose it.", '🏅 소중한 기록이 생겼어요! 계정을 연결하면 잃지 않아요')), 500);
 }
 function rankRows(rows, sub, season) {
   const myBest = season ? SAVE.season.best : SAVE.best;
@@ -1768,17 +1804,17 @@ function rankRows(rows, sub, season) {
   const sk = seasonSkin();
   // 시즌 탭: 남은 기간 + 한정 스킨 진행도를 함께 보여줘 재도전 동기를 만든다
   const seasonLine = season
-    ? '<div class="tsub">🏅 시즌 ' + (seasonIndex() + 1) + ' · ' + seasonLeftText() + '</div>' +
-      '<div class="tsub">한정 스킨 «' + sk.name + '» ' +
-        (SAVE.ownedSkins.includes(sk.id) ? '획득 완료 ✅'
+    ? '<div class="tsub">' + L('🏅 Season ', '🏅 시즌 ') + (seasonIndex() + 1) + ' · ' + seasonLeftText() + '</div>' +
+      '<div class="tsub">' + L('Season skin «', '한정 스킨 «') + sk.name + '» ' +
+        (SAVE.ownedSkins.includes(sk.id) ? L('Unlocked ✅', '획득 완료 ✅')
                                          : Math.min(myBest, RC.seasonGoal) + ' / ' + RC.seasonGoal) + '</div>'
     : '';
   $('tierBox').innerHTML = '<div class="tname" style="color:' + col + '">' + tn + '</div>' +
-                           '<div class="tsub">' + (season ? '시즌 최고점 ' : '내 최고점 ') + myBest + '점' + (sub ? ' · ' + sub : '') + '</div>' +
+                           '<div class="tsub">' + (season ? L('Season best ', '시즌 최고점 ') : L('My best ', '내 최고점 ')) + myBest + L('', '점') + (sub ? ' · ' + sub : '') + '</div>' +
                            seasonLine +
-                           '<div class="tsub" style="margin-top:6px"><span id="rankNickEdit" style="cursor:pointer;color:#4dffa0;text-decoration:underline">✏️ ' + (SAVE.nickname || '닉네임') + '</span>' +
+                           '<div class="tsub" style="margin-top:6px"><span id="rankNickEdit" style="cursor:pointer;color:#4dffa0;text-decoration:underline">✏️ ' + (SAVE.nickname || L('Nickname', '닉네임')) + '</span>' +
                            (nativeBridge() ? ' &nbsp;·&nbsp; <span id="rankAcct" style="cursor:pointer;color:#4dd2ff;text-decoration:underline">' +
-                                             (!ACCT_LINK_ENABLED ? '⚙️ 계정 관리' : acctLinked() ? '🔗 계정 연결됨' : '☁️ 계정 연결') + '</span>' : '') + '</div>';
+                                             (!ACCT_LINK_ENABLED ? L('⚙️ Manage account', '⚙️ 계정 관리') : acctLinked() ? L('🔗 Account linked', '🔗 계정 연결됨') : L('☁️ Link account', '☁️ 계정 연결')) + '</span>' : '') + '</div>';
   const rne = $('rankNickEdit'); if (rne) rne.onclick = () => { SFX.ui(); openNickModal(false); };
   const rac = $('rankAcct'); if (rac) rac.onclick = () => { SFX.ui(); openAcctModal(); };
   const list = $('rankList'); list.innerHTML = '';
@@ -1800,7 +1836,7 @@ async function renderRank() {
         season ? 'getSeasonLeaderboard' : 'getLeaderboard', myBest);
       if (data && data.top && data.top.length) {
         const rows = data.top.map(t => ({ nm: t.name, sc: t.best, you: !!t.me }));
-        rankRows(rows, data.myRank ? ('내 순위 ' + data.myRank + '위') : '', season);
+        rankRows(rows, data.myRank ? L('My rank #' + data.myRank, '내 순위 ' + data.myRank + '위') : '', season);
         return;
       }
     } catch (e) {}
@@ -1880,13 +1916,13 @@ $('doubleBtn').onclick = () => {
   showAdGuarded(() => {
     coinMult = 2;
     const earned = earnedCoins(2);
-    $('earnCoins').textContent = '+' + earned + ' 🪙 (2배!)';
+    $('earnCoins').textContent = '+' + earned + L(' 🪙 (2×!)', ' 🪙 (2배!)');
     $('doubleBtn').disabled = true;
-    toast('코인 2배 적용!');
+    toast(L('2× coins applied!', '코인 2배 적용!'));
     logEv('coin_double', { source: 'ad', coins: earned });
   }, (res) => {
-    if (res === 'noad') { $('doubleBtn').style.display = 'none'; toast('광고를 불러오지 못했어요'); }
-    else toast('광고를 끝까지 봐야 코인 2배를 받을 수 있어요');
+    if (res === 'noad') { $('doubleBtn').style.display = 'none'; toast(L('No ad available right now', '광고를 불러오지 못했어요')); }
+    else toast(L('Watch the full ad to get 2× coins', '광고를 끝까지 봐야 코인 2배를 받을 수 있어요'));
   }, 'coin_double');
 };
 
@@ -1919,7 +1955,7 @@ window.addEventListener('pagehide', () => { if (state === 'over') commitRun(); }
 const panel = $('panel');
 $('grip').onclick = () => panel.classList.toggle('open');
 $('rageTest').onclick = () => {
-  if (state !== 'playing') { toast('플레이 중에 눌러주세요'); return; }
+  if (state !== 'playing') { toast('Start a game first'); return; }
   audioInit(); rageLeft = RAGE_RINGS; setRage(true); updateHUD();
 };
 function bindSlider(id, key, fmt) {
