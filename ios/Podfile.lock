@@ -1536,6 +1536,9 @@ PODS:
   - PromisesSwift (2.4.1):
     - PromisesObjC (= 2.4.1)
   - RecaptchaInterop (101.0.0)
+  - shared_preferences_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
   - webview_flutter_wkwebview (0.0.1):
     - Flutter
     - FlutterMacOS
@@ -1555,6 +1558,7 @@ DEPENDENCIES:
   - flutter_timezone (from `.symlinks/plugins/flutter_timezone/ios`)
   - google_mobile_ads (from `.symlinks/plugins/google_mobile_ads/ios`)
   - google_sign_in_ios (from `.symlinks/plugins/google_sign_in_ios/darwin`)
+  - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - webview_flutter_wkwebview (from `.symlinks/plugins/webview_flutter_wkwebview/darwin`)
 
 SPEC REPOS:
@@ -1627,22 +1631,24 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/google_mobile_ads/ios"
   google_sign_in_ios:
     :path: ".symlinks/plugins/google_sign_in_ios/darwin"
+  shared_preferences_foundation:
+    :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
   webview_flutter_wkwebview:
     :path: ".symlinks/plugins/webview_flutter_wkwebview/darwin"
 
 SPEC CHECKSUMS:
   abseil: a05cc83bf02079535e17169a73c5be5ba47f714b
-  app_tracking_transparency: e169b653478da7bb15a6c61209015378ca73e375
+  app_tracking_transparency: 3d84f147f67ca82d3c15355c36b1fa6b66ca7c92
   AppAuth: ef4da5a3fc2e10b90c09a0a94a9baeaedc0341d5
   AppCheckCore: e215d35177a9cf469927863e69c13e220df32a8b
   BoringSSL-GRPC: dded2a44897e45f28f08ae87a55ee4bcd19bc508
-  cloud_firestore: f3c9a905376c42b2a55b1f88c39656a5cccb2419
+  cloud_firestore: 3f0a8af2d865cade8f7db11bc2a419bd66a7237e
   Firebase: 5523dd53ebe603451b4e1befcd99fa20a5c015cd
-  firebase_analytics: 894010794ae817b324e9726024db763607942220
-  firebase_auth: 8c86ebb960d57cd0841ce4dd8e14c2a550406317
-  firebase_core: 9bb8d013f9b36a31d32e34629e5348dd51d8e35e
-  firebase_crashlytics: 09c4988fa79b9c8645c70f56f7c4637b8626dc5e
-  firebase_remote_config: dfc806aaa037cce5c60398406c05434706097939
+  firebase_analytics: eabab995ffa6e93bf1888e573eda3a8264c0f30f
+  firebase_auth: 4c0f66df5d18671fd5ce6d6e9eb5ebdb653e03e5
+  firebase_core: 22b31970001508f6e63945bedcb7b9de68819aa5
+  firebase_crashlytics: f849aa211acedd808e8edc055d57d5aaeb7a2633
+  firebase_remote_config: 990169a8da90a9622619cf94dbab7118156b3bf8
   FirebaseABTesting: 7060ad22592c1ae86cccf9cc0f886f470084cbd5
   FirebaseAnalytics: 651ecdc96c7dd8df0c15d55b6c6b70f78c2987b9
   FirebaseAppCheckInterop: 8c2fe8b563377bd948ee6acc2871fe2dfb3a034a
@@ -1660,13 +1666,13 @@ SPEC CHECKSUMS:
   FirebaseSessions: 3eaac5fd8077513b95f9723efd940438e3e35fb2
   FirebaseSharedSwift: 9d9404eea60b650d3e549898bfebbb8f665fe601
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  flutter_inappwebview_ios: 6f63631e2c62a7c350263b13fa5427aedefe81d4
-  flutter_local_notifications: eda81afddbf18f8589f6ec069ce593c4c6378769
-  flutter_native_splash: df59bb2e1421aa0282cb2e95618af4dcb0c56c29
-  flutter_timezone: ac3da59ac941ff1c98a2e1f0293420e020120282
+  flutter_inappwebview_ios: b89ba3482b96fb25e00c967aae065701b66e9b99
+  flutter_local_notifications: 643a3eda1ce1c0599413ca31672536d423dee214
+  flutter_native_splash: c32d145d68aeda5502d5f543ee38c192065986cf
+  flutter_timezone: 7c838e17ffd4645d261e87037e5bebf6d38fe544
   Google-Mobile-Ads-SDK: 7692126a35ed859f20635af281c50a2162be8bea
-  google_mobile_ads: e0c300fcd472c3fa5a00d6cca8b0c65bbbb15faf
-  google_sign_in_ios: 7336a3372ea93ea56a21e126a0055ffca3723601
+  google_mobile_ads: bab325fd4e31c9705cab0cb298e4f5a9bdb7370f
+  google_sign_in_ios: 000870aa06da9b28d1d0bf7ef70ff0213059dd28
   GoogleAdsOnDeviceConversion: e3b71da24ff4cf01cf520756ac1c2b93c07b86ff
   GoogleAppMeasurement: d70df385587c4175fc0836c11e413d5cbcaa3c7b
   GoogleDataTransport: a24e58982ab3ba2f64d79613e027fe7f57e88539
@@ -1683,7 +1689,8 @@ SPEC CHECKSUMS:
   PromisesObjC: 752c3227f599e3467650e47ea36f433eeb10c273
   PromisesSwift: 217dea0fd5d2ad65222a109c48698add13cc1c5b
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
-  webview_flutter_wkwebview: 29eb20d43355b48fe7d07113835b9128f84e3af4
+  shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
+  webview_flutter_wkwebview: 8ebf4fded22593026f7dbff1fbff31ea98573c8d
 
 PODFILE CHECKSUM: 53a6aebc29ccee84c41f92f409fc20cd4ca011f1
 

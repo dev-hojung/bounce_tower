@@ -111,6 +111,8 @@
   .skin .st.eq { color: #4dffa0; }
   .skin .st.buy { color: #ffd84d; }
   .skin .st.lock { color: #ff6b6b; }
+  /* 소모품 설명: 색 지정이 없어 기본 검정(어두운 카드 위)으로 보이던 문제 수정 (#56) */
+  .skin .pct { color: #b8b8d0; line-height: 1.35; }
 
   /* ===== 미션/데일리 ===== */
   .mission, .rankrow { display: flex; align-items: center; background: rgba(255,255,255,.06); border-radius: 14px; padding: 13px 15px; margin-bottom: 10px; }
@@ -248,7 +250,7 @@
     <button class="btn" id="playBtn" style="width:100%;max-width:320px" data-ko="▶ 플레이">▶ PLAY</button>
     <div class="tabs">
       <div class="tab" id="tabShop"><span class="ic">🛍️</span><span data-ko="상점">Shop</span></div>
-      <div class="tab" id="tabDaily"><span class="ic">🎁</span><span data-ko="데일리">Daily</span><span id="dailyBadge"></span></div>
+      <div class="tab" id="tabDaily"><span class="ic">🎁</span><span data-ko="데일리">Daily</span><span id="dailyBadge" class="badge"></span></div>
       <div class="tab" id="tabRank"><span class="ic">🏆</span><span data-ko="랭킹">Ranking</span></div>
     </div>
   </div>
@@ -1438,9 +1440,12 @@ function onBuyItem(it) {
 }
 
 // ----- 미션 (일일 / 주간 / 업적) -----
-const MLABELS = LANG === 'ko'
-  ? { combo: '한 판 콤보', depth: '깊이 도달', coins: '코인 모으기', games: '플레이 횟수' }
-  : { combo: 'Combo in one run:', depth: 'Reach depth', coins: 'Collect coins:', games: 'Play games:' };
+const MLABELS = {
+  combo: L('Combo in one run:', '한 판 콤보'),
+  depth: L('Reach depth', '깊이 도달'),
+  coins: L('Collect coins:', '코인 모으기'),
+  games: L('Play games:', '플레이 횟수'),
+};
 function missionDone(i) { const m = SAVE.missions.defs[i], pr = SAVE.missions.prog; return pr[m.type] >= m.target; }
 function weeklyDone(i) { const m = SAVE.weekly.defs[i], pr = SAVE.weekly.prog; return pr[m.type] >= m.target; }
 function achvVal(a) { return a.stat === 'skins' ? SAVE.ownedSkins.length : (SAVE.stats[a.stat] || 0); }
@@ -1829,7 +1834,7 @@ function rankRows(rows, sub, season) {
   rows.forEach((p, i) => {
     const row = document.createElement('div');
     row.className = 'rankrow' + (p.you ? ' you' : '');
-    row.innerHTML = '<div class="rk">' + (p.rk || (i + 1)) + '</div><div class="nm">' + (p.you ? '🙋 ' + (p.nm || 'YOU') : p.nm) + '</div><div class="sc">' + p.sc + '</div>';
+    row.innerHTML = '<div class="rk">' + (p.rk || (i + 1)) + '</div><div class="nm">' + (p.you ? '🙋 ' + (p.nm || L('YOU', '나')) : p.nm) + '</div><div class="sc">' + p.sc + '</div>';
     list.appendChild(row);
   });
 }
@@ -1851,7 +1856,7 @@ async function renderRank() {
   }
   // 2) 폴백: 봇 목업 랭킹 (시즌은 기간이 짧으니 봇 점수도 낮게 잡는다)
   const all = BOTS.map(b => ({ nm: b[0], sc: season ? Math.floor(b[1] * 0.6) : b[1], you: false }));
-  all.push({ nm: 'YOU', sc: myBest, you: true });
+  all.push({ nm: L('YOU', '나'), sc: myBest, you: true });
   all.sort((a, b) => b.sc - a.sc);
   rankRows(all, '', season);
 }

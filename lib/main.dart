@@ -25,6 +25,24 @@ final InAppLocalhostServer _localhostServer =
 String gameUrl({required bool debug}) =>
     'http://localhost:8080/index.html${debug ? '?dev=1' : ''}';
 
+/// 게임 WebView 설정.
+///
+/// `disableVerticalScroll`/`disableHorizontalScroll`은 **켜면 안 된다.**
+/// flutter_inappwebview_android는 둘 다 true이면 OnTouchListener에서
+/// ACTION_MOVE를 모두 소비해 웹에 pointermove/touchmove가 가지 않는다
+/// (InAppWebView.java `onTouch`). 그러면 드래그로 타워가 돌지 않고 상점 목록도
+/// 스크롤되지 않는다(#56). 페이지 스크롤은 index.html의 `overflow:hidden`과
+/// `touch-action:none`으로 이미 막혀 있다.
+InAppWebViewSettings gameWebViewSettings() => InAppWebViewSettings(
+      transparentBackground: true,
+      mediaPlaybackRequiresUserGesture: false,
+      allowsInlineMediaPlayback: true,
+      disableContextMenu: true,
+      supportZoom: false,
+      // Android localhost(http) 허용
+      mixedContentMode: MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW,
+    );
+
 /// 지표·크래시 수집. main()에서 Firebase 초기화 직후 켜고, 이후 브리지가 쓴다.
 final AnalyticsService _analytics = AnalyticsService();
 
@@ -186,17 +204,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
         bottom: false,
         child: InAppWebView(
           initialUrlRequest: URLRequest(url: WebUri(gameUrl(debug: kDebugMode))),
-          initialSettings: InAppWebViewSettings(
-            transparentBackground: true,
-            mediaPlaybackRequiresUserGesture: false,
-            allowsInlineMediaPlayback: true,
-            disableContextMenu: true,
-            supportZoom: false,
-            disableVerticalScroll: true,
-            disableHorizontalScroll: true,
-            // Android localhost(http) 허용
-            mixedContentMode: MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW,
-          ),
+          initialSettings: gameWebViewSettings(),
           onWebViewCreated: (controller) {
             // ── JS → Dart 브리지 핸들러 등록 (index.html 브리지 스크립트와 짝) ──
             // 규격: docs/bridge.md

@@ -106,10 +106,10 @@ String blankNonEnglish(String src) {
 }
 
 /// 한국어 전용으로 의도된 줄(사람이 확인한 목록).
+/// (#56) MLABELS도 L()로 바꿔 예외에서 뺐다. 남은 예외는 닉네임 검증용 데이터뿐.
 bool _koOnlyByDesign(String line) =>
     line.contains('가-힣') || // 닉네임 허용 문자 정규식
-    line.contains("'시발'") || // 닉네임 금칙어
-    line.contains("combo: '한 판 콤보'"); // MLABELS 한국어 테이블(LANG==='ko'에서만 사용)
+    line.contains("'시발'"); // 닉네임 금칙어
 
 void main() {
   test('blankNonEnglish: L()의 한국어 인자만 지운다', () {
@@ -117,6 +117,14 @@ void main() {
         "<script>toast(L(a + ' ok', a + ' 확인')); x = '한글';</script>");
     expect(s.contains('확인'), isFalse);
     expect(s.contains('한글'), isTrue);
+  });
+
+  test('blankNonEnglish: 같은 줄에서 L() 뒤에 붙은 한국어도 잡는다 (#56)', () {
+    final s = blankNonEnglish(
+        "<script>toast(L('Hi', '안녕') + ' 획득'); y = L('a' + n, n + '개');</script>");
+    expect(s.contains('안녕'), isFalse);
+    expect(s.contains('개'), isFalse);
+    expect(s.contains('획득'), isTrue);
   });
 
   test('언어 적용은 vendor 스크립트보다 먼저 실행된다(로딩 중 영어 깜빡임 방지)', () {

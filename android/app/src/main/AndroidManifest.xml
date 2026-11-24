@@ -4,6 +4,7 @@
         android:label="Bounce Tower"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
+        android:localeConfig="@xml/locales_config"
         android:usesCleartextTraffic="true">
 
         <!-- AdMob App ID (현재 Google 테스트 App ID — 출시 전 본인 계정 ID로 교체) -->

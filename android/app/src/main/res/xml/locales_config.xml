@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 앱별 언어 설정(Android 13+ 설정 → 앱 → 언어)에 노출할 언어. 영어 기본 + 한국어 (#56).
+     https://developer.android.com/guide/topics/resources/app-languages -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en"/>
+    <locale android:name="ko"/>
+</locale-config>

@@ -4,9 +4,15 @@
 	<dict>
 		<key>CADisableMinimumFrameDurationOnPhone</key>
 		<true/>
-		<!-- ATT: 광고 식별자 추적 사용 설명 -->
+		<!-- ATT: 광고 식별자 추적 사용 설명. 기본은 영어, 언어별 문구는 en.lproj/ko.lproj의 InfoPlist.strings (#56) -->
 		<key>NSUserTrackingUsageDescription</key>
-		<string>맞춤형 광고를 제공하기 위해 기기의 광고 식별자 사용에 대한 동의가 필요합니다. 동의하지 않아도 게임은 그대로 즐기실 수 있습니다.</string>
+		<string>Your permission lets us use this device's advertising identifier to show more relevant ads. You can enjoy the game the same way if you decline.</string>
+		<!-- 지원 언어: 영어(기본) + 한국어 -->
+		<key>CFBundleLocalizations</key>
+		<array>
+			<string>en</string>
+			<string>ko</string>
+		</array>
 		<!-- AdMob App ID (현재 Google 테스트 App ID — 출시 전 본인 계정 ID로 교체) -->
 		<key>GADApplicationIdentifier</key>
 		<string>ca-app-pub-3940256099942544~1458002511</string>
