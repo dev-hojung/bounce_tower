@@ -5,9 +5,15 @@ import java.io.FileInputStream
 // 없으면 debug 키로 폴백한다(로컬에서 flutter run --release가 그대로 되도록).
 // ⚠️ 스토어 업로드 빌드는 반드시 key.properties가 있는 상태에서 만들 것.
 //    키스토어와 비밀번호는 분실 시 앱 업데이트가 영구 불가하므로 안전하게 백업.
+//
+// 녹화·QA용 release APK는 업로드 키 없이 만든다:
+//   flutter build apk --release -P debugSign=true
+// → key.properties를 읽지 않고 debug 키로 서명(업무 #54). 스토어 업로드 불가.
+val forceDebugSign = (project.findProperty("debugSign") as String?) == "true"
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
-if (keystorePropertiesFile.exists()) {
+val useReleaseKey = keystorePropertiesFile.exists() && !forceDebugSign
+if (useReleaseKey) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
@@ -51,7 +57,7 @@ android {
     }
 
     signingConfigs {
-        if (keystorePropertiesFile.exists()) {
+        if (useReleaseKey) {
             create("release") {
                 keyAlias = keystoreProperties["keyAlias"] as String
                 keyPassword = keystoreProperties["keyPassword"] as String
@@ -63,7 +69,7 @@ android {
 
     buildTypes {
         release {
-            signingConfig = if (keystorePropertiesFile.exists()) {
+            signingConfig = if (useReleaseKey) {
                 signingConfigs.getByName("release")
             } else {
                 // 키가 없으면 debug 서명으로 폴백 — 스토어 업로드는 불가하다.
