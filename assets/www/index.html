@@ -6,7 +6,7 @@
 <title>Bounce Tower</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a14; font-family: -apple-system, system-ui, sans-serif; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #1A0E33; /* 브랜드 배경색 — 스플래시·Flutter와 같은 값(#81) */ font-family: -apple-system, system-ui, sans-serif; }
   #app { position: fixed; inset: 0; touch-action: none; }
   canvas { display: block; }
 
@@ -375,8 +375,8 @@
 <!-- 튜닝 패널 -->
 <div id="panel" class="hide">
   <!-- 개발 전용(DEV_TOOLS). 출시 빌드에서는 표시되지 않는다. -->
+  <!-- 밸런스 슬라이더만 둔다. 즉시 무적 같은 치트 버튼은 넣지 않는다(#81, test/release_ui_test.dart). -->
   <div class="grip" id="grip">⚙ DEV TUNING</div>
-  <div class="row"><button id="rageTest" class="miniBtn" style="width:100%;padding:10px;font-size:13px">🔥 RAGE test (instant)</button></div>
   <div class="row"><label>Gravity</label><input id="s_grav" type="range" min="20" max="90" step="1"><span class="val" id="v_grav"></span></div>
   <div class="row"><label>Bounce</label><input id="s_bounce" type="range" min="8" max="30" step="0.5"><span class="val" id="v_bounce"></span></div>
   <div class="row"><label>Rotate speed</label><input id="s_rot" type="range" min="0.002" max="0.02" step="0.001"><span class="val" id="v_rot"></span></div>
@@ -1119,13 +1119,21 @@ function reviveWithItem() {
 }
 
 // ---- 입력 ----
-let dragging = false, lastX = 0;
-function onDown(x) { audioInit(); dragging = true; lastX = x; if (state === 'playing' && !started) { started = true; elHint.classList.remove('show'); } }
-function onMove(x) { if (!dragging || state !== 'playing') return; const dx = x - lastX; lastX = x; tower.rotation.y += dx * P.rotateSpeed; }
-function onUp() { dragging = false; }
-renderer.domElement.addEventListener('pointerdown', e => onDown(e.clientX));
-window.addEventListener('pointermove', e => onMove(e.clientX));
+// 실기기 방어(#81):
+// · 캔버스에도 touch-action:none을 직접 건다 — WebView가 드래그를 팬/스크롤로 가져가며
+//   pointercancel을 보내지 않게 한다(#app의 값에만 기대지 않음).
+// · 첫 손가락(dragId)만 따라간다 — 두 번째 손가락의 move가 섞이면 lastX가 튀어 타워가 역회전한다.
+// · pointercancel(제스처 내비·가장자리 스와이프·멀티터치)·blur에서 드래그를 끝낸다 — 다음 터치가 깨끗이 다시 시작된다.
+let dragging = false, lastX = 0, dragId = null;
+function onDown(x, id) { audioInit(); dragging = true; dragId = id; lastX = x; if (state === 'playing' && !started) { started = true; elHint.classList.remove('show'); } }
+function onMove(x, id) { if (!dragging || id !== dragId || state !== 'playing') return; const dx = x - lastX; lastX = x; tower.rotation.y += dx * P.rotateSpeed; }
+function onUp(e) { if (e && e.pointerId !== undefined && e.pointerId !== dragId) return; dragging = false; dragId = null; }
+renderer.domElement.style.touchAction = 'none';
+renderer.domElement.addEventListener('pointerdown', e => { if (!dragging || e.isPrimary) onDown(e.clientX, e.pointerId); });
+window.addEventListener('pointermove', e => onMove(e.clientX, e.pointerId));
 window.addEventListener('pointerup', onUp);
+window.addEventListener('pointercancel', onUp);
+window.addEventListener('blur', () => onUp());
 
 // ---- 물리 ----
 // 무적 강하: 링의 보이는 발판을 모두 부수고 원형 파편 분출
@@ -1967,10 +1975,6 @@ window.addEventListener('pagehide', () => { if (state === 'over') commitRun(); }
 // ---- 튜닝 패널 ----
 const panel = $('panel');
 $('grip').onclick = () => panel.classList.toggle('open');
-$('rageTest').onclick = () => {
-  if (state !== 'playing') { toast('Start a game first'); return; }
-  audioInit(); rageLeft = RAGE_RINGS; setRage(true); updateHUD();
-};
 function bindSlider(id, key, fmt) {
   const s = $('s_' + id), v = $('v_' + id);
   s.value = P[key]; v.textContent = fmt(P[key]);

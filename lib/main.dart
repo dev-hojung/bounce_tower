@@ -43,6 +43,10 @@ InAppWebViewSettings gameWebViewSettings() => InAppWebViewSettings(
       mixedContentMode: MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW,
     );
 
+/// 브랜드 배경색(#81). 스플래시(pubspec `flutter_native_splash`), Android NormalTheme
+/// (`res/values/colors.xml` brand_bg), 웹 `html, body`와 반드시 같은 값.
+const Color kBrandBg = Color(0xFF1A0E33);
+
 /// 지표·크래시 수집. main()에서 Firebase 초기화 직후 켜고, 이후 브리지가 쓴다.
 final AnalyticsService _analytics = AnalyticsService();
 
@@ -196,9 +200,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    // 게임 배경(보라 그라데이션)과 톤을 맞춰 로딩 깜빡임 최소화
+    // 스플래시·NormalTheme·웹 body와 같은 브랜드 배경색 → 로딩 중 색이 튀지 않는다(#81)
     return Scaffold(
-      backgroundColor: const Color(0xFF241638),
+      backgroundColor: kBrandBg,
       body: SafeArea(
         top: false,
         bottom: false,

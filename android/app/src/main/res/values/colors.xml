@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 브랜드 배경색(#81). 스플래시(pubspec flutter_native_splash)·Flutter Scaffold(lib/main.dart)·
+         웹 body(assets/www/index.html)와 같은 값이어야 전환 때 색이 튀지 않는다. -->
+    <color name="brand_bg">#1A0E33</color>
+</resources>

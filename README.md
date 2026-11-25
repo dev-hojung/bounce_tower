@@ -96,9 +96,25 @@ cd tool/webtest && npm i && node run.mjs
 - [ ] 릴리스 키스토어 생성 → `android/key.properties`(예시 파일 참고). 없으면 debug 서명으로 폴백된다
 
 > 수익은 **광고 전용**(전면·보상형). 유료 상품 없음. 자세한 잔여 작업은 `출시_체크리스트.md`.
-> 완료: 앱 아이콘·스플래시·앱 이름, ATT 동의, 개인정보처리방침 URL, Firebase 랭킹·클라우드
+> 완료: 앱 아이콘·스플래시(#81: 브랜드 배경 `#1A0E33`, 아래 "브랜드 배경색" 참고)·앱 이름, ATT 동의, 개인정보처리방침 URL, Firebase 랭킹·클라우드
 > 세이브, 닉네임 UI, 로컬 알림 3종, 2주 시즌 랭킹 + 시즌 한정 스킨, Remote Config,
 > 계정 연결(Google/Apple) 코드(설정 전에는 "로그인 설정이 아직 준비되지 않았어요"로 안전 실패).
+
+## 브랜드 배경색 / 스플래시
+
+`#1A0E33` 하나를 네 곳이 같이 쓴다. 하나만 바꾸면 앱이 켜질 때 색이 한 번 튄다.
+
+| 위치 | 값 |
+|---|---|
+| `pubspec.yaml` `flutter_native_splash` (color·color_dark, android_12 포함) | `#1A0E33` |
+| `android/app/src/main/res/values/colors.xml` `brand_bg` → 4개 `styles.xml`의 NormalTheme | `@color/brand_bg` |
+| `lib/main.dart` `kBrandBg` (Scaffold 배경) | `0xFF1A0E33` |
+| `assets/www/index.html` `html, body` 배경 | `#1A0E33` |
+
+- 스플래시 그림은 `assets/icon/icon.png`에서 타워·공 부분만 잘라 만든다(Android 12용 1152px, 그 외 1024px).
+  `pubspec.yaml` 수정 후 `dart run flutter_native_splash:create`. 실행하면 styles.xml이 다시 써지므로
+  NormalTheme이 `@color/brand_bg`로 남아 있는지 확인한다(`test/splash_input_test.dart`가 검사).
+- DEV 튜닝 패널(debug 빌드의 `?dev=1`)에는 밸런스 슬라이더만 둔다. 즉시 무적 같은 치트 버튼은 넣지 않는다(#81).
 
 ## Remote Config로 조정 가능한 값
 
